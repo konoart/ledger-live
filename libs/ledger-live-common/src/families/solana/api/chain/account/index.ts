@@ -1,5 +1,5 @@
 export {
   tryParseAsTokenAccount,
-  parseTokenAccountInfo,
+  parseTokenAccount,
   tryParseAsVoteAccount,
 } from "./parser";

@@ -26,12 +26,11 @@ import {
   TransferCommand,
 } from "../../types";
 import { drainSeqAsyncGen } from "../../utils";
+import { tryParseAsTokenAccount, tryParseAsVoteAccount } from "./account";
 import {
-  parseTokenAccountInfo,
-  tryParseAsTokenAccount,
-  tryParseAsVoteAccount,
-} from "./account";
-import { parseStakeAccountInfo } from "./account/parser";
+  ParsedTokenAccountInfo,
+  parseStakeAccountInfo,
+} from "./account/parser";
 import { StakeAccountInfo } from "./account/stake";
 import { TokenAccountInfo } from "./account/token";
 import { VoteAccountInfo } from "./account/vote";
@@ -42,27 +41,31 @@ type ParsedOnChainTokenAccount = Awaited<
   ReturnType<Connection["getParsedTokenAccountsByOwner"]>
 >["value"][number];
 
+export type ParsedOnChainTokenAccountWithInfo = {
+  onChainAcc: ParsedOnChainTokenAccount;
+  info: ParsedTokenAccountInfo;
+};
+
+export type MintAccountWithInfo = ParsedOnChainTokenAccountWithInfo & {
+  info: {
+    kind: "mint";
+  };
+};
+
+export type TokenAccountWithInfo = ParsedOnChainTokenAccountWithInfo & {
+  info: {
+    kind: "account";
+  };
+};
+
 type ParsedOnChainStakeAccount = Awaited<
   ReturnType<Connection["getParsedProgramAccounts"]>
 >[number];
-
-export type ParsedOnChainTokenAccountWithInfo = {
-  onChainAcc: ParsedOnChainTokenAccount;
-  info: TokenAccountInfo;
-};
 
 export type ParsedOnChainStakeAccountWithInfo = {
   onChainAcc: ParsedOnChainStakeAccount;
   info: StakeAccountInfo;
 };
-
-export function toTokenAccountWithInfo(
-  onChainAcc: ParsedOnChainTokenAccount
-): ParsedOnChainTokenAccountWithInfo {
-  const parsedInfo = onChainAcc.account.data.parsed.info;
-  const info = parseTokenAccountInfo(parsedInfo);
-  return { onChainAcc, info };
-}
 
 export function toStakeAccountWithInfo(
   onChainAcc: ParsedOnChainStakeAccount

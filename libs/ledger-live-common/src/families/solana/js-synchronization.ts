@@ -1,4 +1,28 @@
+import { getTokenById } from "@ledgerhq/cryptoassets";
+import {
+  InflationReward,
+  ParsedMessageAccount,
+  ParsedTransaction,
+  ParsedTransactionMeta,
+  StakeActivationData,
+} from "@solana/web3.js";
+import BigNumber from "bignumber.js";
+import {
+  compact,
+  filter,
+  flow,
+  groupBy,
+  keyBy,
+  map,
+  pipe,
+  sortBy,
+  sum,
+  toPairs,
+  uniqBy,
+} from "lodash/fp";
+import { emptyHistoryCache } from "../../account";
 import { GetAccountShapeArg0, mergeOps } from "../../bridge/jsHelpers";
+import { encodeOperationId } from "../../operation";
 import {
   Account,
   encodeAccountId,
@@ -6,19 +30,19 @@ import {
   OperationType,
   TokenAccount,
 } from "../../types";
-import BigNumber from "bignumber.js";
-
-import { emptyHistoryCache } from "../../account";
+import { ChainAPI } from "./api";
+import { parseTokenAccount } from "./api/chain/account";
+import { parseQuiet } from "./api/chain/program";
 import {
   getTransactions,
+  MintAccountWithInfo,
   ParsedOnChainStakeAccountWithInfo,
+  ParsedOnChainTokenAccountWithInfo,
+  TokenAccountWithInfo,
   toStakeAccountWithInfo,
   TransactionDescriptor,
 } from "./api/chain/web3";
-import { getTokenById } from "@ledgerhq/cryptoassets";
-import { encodeOperationId } from "../../operation";
 import {
-  Awaited,
   encodeAccountIdWithTokenAccountAddress,
   isStakeLockUpInForce,
   tokenIsListedOnLedger,
@@ -26,39 +50,8 @@ import {
   toTokenMint,
   withdrawableFromStake,
 } from "./logic";
-import {
-  compact,
-  filter,
-  groupBy,
-  keyBy,
-  toPairs,
-  pipe,
-  map,
-  uniqBy,
-  flow,
-  sortBy,
-  sum,
-} from "lodash/fp";
-import { parseQuiet } from "./api/chain/program";
-import {
-  InflationReward,
-  ParsedTransactionMeta,
-  ParsedMessageAccount,
-  ParsedTransaction,
-  StakeActivationData,
-} from "@solana/web3.js";
-import { ChainAPI } from "./api";
-import {
-  ParsedOnChainTokenAccountWithInfo,
-  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-  toTokenAccountWithInfo,
-} from "./api/chain/web3";
-import { drainSeq } from "./utils";
 import { SolanaStake } from "./types";
-
-type OnChainTokenAccount = Awaited<
-  ReturnType<typeof getAccount>
->["tokenAccounts"][number];
+import { drainSeq } from "./utils";
 
 export const getAccountShapeWithAPI = async (
   info: GetAccountShapeArg0,
@@ -74,7 +67,7 @@ export const getAccountShapeWithAPI = async (
   const {
     blockHeight,
     balance: mainAccBalance,
-    tokenAccounts: onChaintokenAccounts,
+    tokenAccounts: onChainTokenAccounts,
     stakes: onChainStakes,
   } = await getAccount(mainAccAddress, api);
 
@@ -86,9 +79,17 @@ export const getAccountShapeWithAPI = async (
     derivationMode,
   });
 
+  const mintAccounts: MintAccountWithInfo[] = onChainTokenAccounts.filter(
+    (value): value is MintAccountWithInfo => value.info.kind === "mint"
+  );
+
+  const tokenAccounts: TokenAccountWithInfo[] = onChainTokenAccounts.filter(
+    (value): value is TokenAccountWithInfo => value.info.kind === "account"
+  );
+
   const onChainTokenAccsByMint = pipe(
-    () => onChaintokenAccounts,
-    groupBy(({ info: { mint } }) => mint.toBase58()),
+    () => tokenAccounts,
+    groupBy(({ info }) => info.value.mint.toBase58()),
     (v) => new Map(toPairs(v))
   )();
 
@@ -121,7 +122,7 @@ export const getAccountShapeWithAPI = async (
 
     const subAcc = subAccByMint.get(mint);
 
-    const lastSyncedTxSignature = subAcc?.operations?.[0].hash;
+    const lastSyncedTxSignature = subAcc?.operations?.[0]?.hash;
 
     const txs = await getTransactions(
       assocTokenAcc.onChainAcc.pubkey.toBase58(),
@@ -259,7 +260,7 @@ function newSubAcc({
   txs,
 }: {
   mainAccountId: string;
-  assocTokenAcc: OnChainTokenAccount;
+  assocTokenAcc: TokenAccountWithInfo;
   txs: TransactionDescriptor[];
 }): TokenAccount {
   const firstTx = txs[txs.length - 1];
@@ -268,7 +269,7 @@ function newSubAcc({
     (firstTx.info.blockTime ?? Date.now() / 1000) * 1000
   );
 
-  const tokenId = toTokenId(assocTokenAcc.info.mint.toBase58());
+  const tokenId = toTokenId(assocTokenAcc.info.value.mint.toBase58());
   const tokenCurrency = getTokenById(tokenId);
 
   const accosTokenAccPubkey = assocTokenAcc.onChainAcc.pubkey;
@@ -278,7 +279,7 @@ function newSubAcc({
     accosTokenAccPubkey.toBase58()
   );
 
-  const balance = new BigNumber(assocTokenAcc.info.tokenAmount.amount);
+  const balance = new BigNumber(assocTokenAcc.info.value.tokenAmount.amount);
 
   const newOps = compact(
     txs.map((tx) => txToTokenAccOperation(tx, assocTokenAcc, accountId))
@@ -307,10 +308,10 @@ function patchedSubAcc({
   txs,
 }: {
   subAcc: TokenAccount;
-  assocTokenAcc: OnChainTokenAccount;
+  assocTokenAcc: TokenAccountWithInfo;
   txs: TransactionDescriptor[];
 }): TokenAccount {
-  const balance = new BigNumber(assocTokenAcc.info.tokenAmount.amount);
+  const balance = new BigNumber(assocTokenAcc.info.value.tokenAmount.amount);
 
   const newOps = compact(
     txs.map((tx) => txToTokenAccOperation(tx, assocTokenAcc, subAcc.id))
@@ -422,7 +423,7 @@ function getOpExtra(tx: TransactionDescriptor): Record<string, any> {
 
 function txToTokenAccOperation(
   tx: TransactionDescriptor,
-  assocTokenAcc: OnChainTokenAccount,
+  assocTokenAcc: TokenAccountWithInfo,
   accountId: string
 ): Operation | undefined {
   if (!tx.info.blockTime || !tx.parsed.meta) {
@@ -651,14 +652,16 @@ async function getAccount(
 }> {
   const balanceLamportsWithContext = await api.getBalanceAndContext(address);
 
-  const tokenAccounts = [];
-
-  // no tokens for the first release
-  /*await api
+  const tokenAccounts = await api
     .getParsedTokenAccountsByOwner(address)
-    .then((res) => res.value)
-    .then(map(toTokenAccountWithInfo));
-    */
+    .then((res) =>
+      res.value.map((onChainAcc) => {
+        return {
+          onChainAcc,
+          info: parseTokenAccount(onChainAcc.account.data),
+        };
+      })
+    );
 
   const stakeAccountsRaw = [
     ...(await api.getStakeAccountsByStakeAuth(address)),
@@ -671,13 +674,6 @@ async function getAccount(
     map(toStakeAccountWithInfo),
     compact
   )();
-
-  /*
-  Ledger team still decides if we should show rewards
-  const stakeRewards = await api.getInflationReward(
-    stakeAccounts.map(({ onChainAcc }) => onChainAcc.pubkey.toBase58())
-  );
-  */
 
   const stakes = await drainSeq(
     stakeAccounts.map((account) => async () => {
