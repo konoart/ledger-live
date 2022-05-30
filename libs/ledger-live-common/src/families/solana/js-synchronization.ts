@@ -50,6 +50,7 @@ import {
   toTokenMint,
   withdrawableFromStake,
 } from "./logic";
+import { nft } from "./nft";
 import { SolanaStake } from "./types";
 import { drainSeq } from "./utils";
 

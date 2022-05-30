@@ -124,6 +124,14 @@ export function cached(api: ChainAPI): ChainAPI {
 
     getEpochInfo: makeLRUCache(api.getEpochInfo, cacheKeyEmpty, minutes(1)),
 
+    nft: {
+      loadMetadata: makeLRUCache(
+        api.nft.loadMetadata,
+        cacheKeyByArgs,
+        minutes(1)
+      ),
+    },
+
     config: api.config,
   };
 }

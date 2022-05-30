@@ -1,4 +1,8 @@
 import {
+  Metadata,
+  PROGRAM_ID as NFT_METADATA_PROGRAM_ID,
+} from "@metaplex-foundation/mpl-token-metadata";
+import {
   TOKEN_PROGRAM_ID,
   getAssociatedTokenAddress,
   getMinimumBalanceForRentExemptAccount,
@@ -78,6 +82,10 @@ export type ChainAPI = Readonly<{
   getMinimumBalanceForRentExemption: (dataLength: number) => Promise<number>;
 
   getEpochInfo: () => ReturnType<Connection["getEpochInfo"]>;
+
+  nft: {
+    loadMetadata: (mint: string) => Promise<Metadata>;
+  };
 
   config: Config;
 }>;
@@ -193,6 +201,22 @@ export function getChainAPI(
       connection().getMinimumBalanceForRentExemption(dataLength),
 
     getEpochInfo: () => connection().getEpochInfo(),
+
+    nft: {
+      loadMetadata: async (mint: string) => {
+        return Metadata.fromAccountAddress(
+          connection(),
+          PublicKey.findProgramAddressSync(
+            [
+              Buffer.from("metadata"),
+              NFT_METADATA_PROGRAM_ID.toBuffer(),
+              new PublicKey(mint).toBuffer(),
+            ],
+            NFT_METADATA_PROGRAM_ID
+          )[0]
+        );
+      },
+    },
 
     config,
   };
