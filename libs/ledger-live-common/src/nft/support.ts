@@ -10,7 +10,7 @@ export const isNftTransaction = (transaction: Transaction): boolean => {
 };
 
 export function isNFTActive(currency: CryptoCurrency): boolean {
-  return getEnv("NFT_CURRENCIES").split(",").includes(currency.id);
+  return getEnv("NFT_CURRENCIES").split(",").includes(currency?.id);
 }
 
 const nftCapabilities = {

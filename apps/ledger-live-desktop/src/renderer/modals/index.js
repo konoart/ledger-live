@@ -67,6 +67,7 @@ import MODAL_SOLANA_DELEGATION_ACTIVATE from "../families/solana/DelegationActiv
 import MODAL_SOLANA_DELEGATION_DEACTIVATE from "../families/solana/DelegationDeactivateFlowModal";
 import MODAL_SOLANA_DELEGATION_REACTIVATE from "../families/solana/DelegationReactivateFlowModal";
 import MODAL_SOLANA_DELEGATION_WITHDRAW from "../families/solana/DelegationWithdrawFlowModal";
+import MODAL_SOLANA_OPT_IN from "../families/solana/OptInFlowModal";
 
 // Lending
 import MODAL_LEND_MANAGE from "../screens/lend/modals/ManageLend";
@@ -133,6 +134,7 @@ const modals: { [_: string]: React$ComponentType<any> } = {
   MODAL_SOLANA_DELEGATION_DEACTIVATE,
   MODAL_SOLANA_DELEGATION_REACTIVATE,
   MODAL_SOLANA_DELEGATION_WITHDRAW,
+  MODAL_SOLANA_OPT_IN,
   MODAL_FULL_NODE,
   MODAL_LOTTIE_DEBUGGER,
   MODAL_RECOVERY_SEED_WARNING,
