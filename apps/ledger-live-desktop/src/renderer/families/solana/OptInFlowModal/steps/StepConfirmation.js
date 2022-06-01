@@ -17,7 +17,7 @@ import BroadcastErrorDisclaimer from "~/renderer/components/BroadcastErrorDiscla
 import { OperationDetails } from "~/renderer/drawers/OperationDetails";
 import { setDrawer } from "~/renderer/drawers/Provider";
 
-import type { StepProps } from "../types";
+import type { StepperProps } from "../types";
 
 const Container: ThemedComponent<{ shouldSpace?: boolean }> = styled(Box).attrs(() => ({
   alignItems: "center",
@@ -35,7 +35,7 @@ function StepConfirmation({
   device,
   signed,
   transaction,
-}: StepProps) {
+}: StepperProps) {
   const options = account && listTokensForCryptoCurrency(account.currency);
   const token = useMemo(
     //TODO: fix assetId here
@@ -96,7 +96,7 @@ export function StepConfirmationFooter({
   openModal,
   onClose,
   optimisticOperation,
-}: StepProps) {
+}: StepperProps) {
   const concernedOperation = optimisticOperation
     ? optimisticOperation.subOperations && optimisticOperation.subOperations.length > 0
       ? optimisticOperation.subOperations[0]

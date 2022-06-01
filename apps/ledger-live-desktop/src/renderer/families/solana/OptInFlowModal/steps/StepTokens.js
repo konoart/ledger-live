@@ -1,9 +1,8 @@
-// @flow
 import invariant from "invariant";
 import React, { useCallback } from "react";
 import { Trans } from "react-i18next";
 
-import type { StepProps } from "../types";
+import { StepperProps } from "../types";
 
 import { getAccountBridge } from "@ledgerhq/live-common/lib/bridge";
 
@@ -27,7 +26,7 @@ export default function StepTokens({
   warning,
   error,
   t,
-}: StepProps) {
+}: StepperProps) {
   invariant(account && transaction, "account and transaction required");
   const bridge = getAccountBridge(account, parentAccount);
 
@@ -73,7 +72,7 @@ export function StepTokensFooter({
   status,
   bridgePending,
   transaction,
-}: StepProps) {
+}: StepperProps) {
   invariant(account, "account required");
   const { errors } = status;
   const hasErrors = Object.keys(errors).length;

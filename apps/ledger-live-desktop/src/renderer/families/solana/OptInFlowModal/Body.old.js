@@ -13,7 +13,7 @@ import { UserRefusedOnDevice } from "@ledgerhq/errors";
 import { getAccountBridge } from "@ledgerhq/live-common/lib/bridge";
 import useBridgeTransaction from "@ledgerhq/live-common/lib/bridge/useBridgeTransaction";
 
-import type { StepId, StepProps, St } from "./types";
+import type { StepId, StepperProps, St } from "./types";
 import type { Account, Operation } from "@ledgerhq/live-common/lib/types";
 import type { TFunction } from "react-i18next";
 import type { Device } from "@ledgerhq/live-common/lib/hw/actions/types";
@@ -64,7 +64,7 @@ const steps: Array<St> = [
     id: "connectDevice",
     label: <Trans i18nKey="solana.optIn.flow.steps.connectDevice.title" />,
     component: GenericStepConnectDevice,
-    onBack: ({ transitionTo }: StepProps) => transitionTo("tokens"),
+    onBack: ({ transitionTo }: StepperProps) => transitionTo("tokens"),
   },
   {
     id: "confirmation",

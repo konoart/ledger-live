@@ -7,6 +7,7 @@ import {
   RecipientRequired,
 } from "@ledgerhq/errors";
 import BigNumber from "bignumber.js";
+import { attempt } from "lodash/fp";
 import { findSubAccountById } from "../../account";
 import type { Account } from "../../types";
 import { ChainAPI } from "./api";
@@ -32,7 +33,9 @@ import {
   SolanaStakeNoWithdrawAuth,
   SolanaTokenAccounNotInitialized,
   SolanaTokenAccountHoldsAnotherToken,
+  SolanaTokenNotFound,
   SolanaTokenRecipientIsSenderATA,
+  SolanaTokenRequired,
   SolanaUseAllAmountStakeWarning,
   SolanaValidatorRequired,
 } from "./errors";
@@ -41,6 +44,7 @@ import {
   isEd25519Address,
   isValidBase58Address,
   MAX_MEMO_LENGTH,
+  toTokenMint,
 } from "./logic";
 import { estimateTxFee } from "./tx-fees";
 import type {
@@ -281,14 +285,25 @@ async function deriveCreateAssociatedTokenAccountCommandDescriptor(
   model: TransactionModel & { kind: TokenCreateATATransaction["kind"] },
   api: ChainAPI
 ): Promise<CommandDescriptor> {
-  const token = getTokenById(model.uiState.tokenId);
-  const tokenIdParts = token.id.split("/");
-  const mint = tokenIdParts[tokenIdParts.length - 1];
+  const errors: Record<string, Error> = {};
+  const warnings: Record<string, Error> = {};
+  const { tokenId } = model.uiState;
+  const tokenOrError = attempt(() => getTokenById(tokenId));
 
-  const associatedTokenAccountAddress = await api.findAssocTokenAccAddress(
-    mainAccount.freshAddress,
-    mint
-  );
+  if (tokenOrError instanceof Error) {
+    errors.token =
+      model.uiState.tokenId === ""
+        ? new SolanaTokenRequired()
+        : new SolanaTokenNotFound();
+  }
+
+  const mint =
+    tokenOrError instanceof Error ? "" : toTokenMint(tokenOrError.id);
+
+  const associatedTokenAccountAddress =
+    tokenOrError instanceof Error
+      ? ""
+      : await api.findAssocTokenAccAddress(mainAccount.freshAddress, mint);
 
   const txFee = await estimateTxFee(api, mainAccount, "token.createATA");
   const assocAccRentExempt = await api.getAssocTokenAccMinNativeBalance();
@@ -301,8 +316,8 @@ async function deriveCreateAssociatedTokenAccountCommandDescriptor(
       owner: mainAccount.freshAddress,
       associatedTokenAccountAddress,
     },
-    warnings: {},
-    errors: {},
+    warnings,
+    errors,
   };
 }
 

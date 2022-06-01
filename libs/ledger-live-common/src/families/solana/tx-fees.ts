@@ -37,8 +37,9 @@ const createDummyTx = (account: Account, kind: TransactionModel["kind"]) => {
       return createDummyStakeUndelegateTx(account);
     case "stake.withdraw":
       return createDummyStakeWithdrawTx(account);
-    case "stake.split":
     case "token.createATA":
+      return createDummyTokenCreateATATx(account);
+    case "stake.split":
     case "token.transfer":
       throw new Error(`not implemented for <${kind}>`);
     default:
@@ -139,6 +140,25 @@ const createDummyStakeWithdrawTx = (account: Account): Transaction => {
           authorizedAccAddr: account.freshAddress,
           stakeAccAddr: randomAddresses[0],
           toAccAddr: randomAddresses[1],
+        },
+        ...commandDescriptorCommons,
+      },
+    },
+  };
+};
+
+const createDummyTokenCreateATATx = (account: Account): Transaction => {
+  return {
+    ...createTransaction({} as any),
+    model: {
+      kind: "token.createATA",
+      uiState: {} as any,
+      commandDescriptor: {
+        command: {
+          kind: "token.createATA",
+          associatedTokenAccountAddress: randomAddresses[0],
+          mint: randomAddresses[1],
+          owner: account.freshAddress,
         },
         ...commandDescriptorCommons,
       },
