@@ -308,8 +308,14 @@ async function deriveCreateAssociatedTokenAccountCommandDescriptor(
   const txFee = await estimateTxFee(api, mainAccount, "token.createATA");
   const assocAccRentExempt = await api.getAssocTokenAccMinNativeBalance();
 
+  const fee = txFee + assocAccRentExempt;
+
+  if (mainAccount.spendableBalance.lt(fee)) {
+    errors.fee = new NotEnoughBalance();
+  }
+
   return {
-    fee: txFee + assocAccRentExempt,
+    fee,
     command: {
       kind: model.kind,
       mint: mint,

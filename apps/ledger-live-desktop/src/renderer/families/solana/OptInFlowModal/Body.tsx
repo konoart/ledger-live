@@ -39,7 +39,6 @@ const steps: Array<Step> = [
     id: "connectDevice",
     label: <Trans i18nKey="solana.optIn.flow.steps.connectDevice.title" />,
     component: GenericStepConnectDevice,
-    //onBack: ({ transitionTo }: StepperProps) => transitionTo("tokens"),
   },
   {
     id: "confirmation",
@@ -113,7 +112,7 @@ export default function Body({ stepId, onChangeStepId, params, modalName }: Body
   const tokenStatusError =
     status.errors.token instanceof SolanaTokenRequired ? undefined : status.errors.token;
 
-  const error = transactionError || bridgeError || tokenStatusError;
+  const error = transactionError || bridgeError || tokenStatusError || status.errors.fee;
   const warning = status.warnings.token;
 
   const errorSteps = transactionError ? [2] : bridgeError ? [0] : [];

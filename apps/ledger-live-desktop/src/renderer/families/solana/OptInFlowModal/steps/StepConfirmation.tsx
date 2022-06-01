@@ -42,7 +42,7 @@ function StepConfirmation({
 
   const options = listTokensForCryptoCurrency(account.currency);
 
-  const token: TokenCurrency = useMemo(
+  const token: TokenCurrency | undefined = useMemo(
     () => options.find(({ id }) => id === model.uiState.tokenId),
     [options, model.uiState.tokenId],
   );

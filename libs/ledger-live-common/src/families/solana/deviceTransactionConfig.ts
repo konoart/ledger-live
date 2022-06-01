@@ -157,12 +157,6 @@ function fieldsForCreateATA(
     address: command.owner,
   });
 
-  fields.push({
-    type: "address",
-    label: "Fee payer",
-    address: command.owner,
-  });
-
   return fields;
 }
 function fieldsForStakeCreateAccount(
