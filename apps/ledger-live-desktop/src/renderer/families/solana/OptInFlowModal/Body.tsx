@@ -3,17 +3,17 @@ import { addPendingOperation } from "@ledgerhq/live-common/lib/account";
 import { getAccountBridge } from "@ledgerhq/live-common/lib/bridge";
 import useBridgeTransaction from "@ledgerhq/live-common/lib/bridge/useBridgeTransaction";
 import { SolanaTokenRequired } from "@ledgerhq/live-common/lib/errors";
+import { Transaction } from "@ledgerhq/live-common/lib/families/solana/types";
 import { Account, AccountLike, Operation } from "@ledgerhq/live-common/lib/types";
-import React, { useCallback, useState } from "react";
+import React, { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import logger from "~/logger/logger";
 import { updateAccountWithUpdater } from "~/renderer/actions/accounts";
-import { closeModal, openModal } from "~/renderer/actions/modals";
+import { closeModal } from "~/renderer/actions/modals";
 import Track from "~/renderer/analytics/Track";
 import Stepper from "~/renderer/components/Stepper";
 import GenericStepConnectDevice from "~/renderer/modals/Send/steps/GenericStepConnectDevice";
-import { getCurrentDevice } from "~/renderer/reducers/devices";
 import StepConfirmation, { StepConfirmationFooter } from "./steps/StepConfirmation";
 import StepTokens, { StepTokensFooter } from "./steps/StepTokens";
 import { Step, StepId, StepperProps } from "./types";
@@ -39,7 +39,7 @@ const steps: Array<Step> = [
     id: "connectDevice",
     label: <Trans i18nKey="solana.optIn.flow.steps.connectDevice.title" />,
     component: GenericStepConnectDevice,
-    onBack: ({ transitionTo }: StepperProps) => transitionTo("tokens"),
+    //onBack: ({ transitionTo }: StepperProps) => transitionTo("tokens"),
   },
   {
     id: "confirmation",
@@ -50,29 +50,26 @@ const steps: Array<Step> = [
 ];
 
 export default function Body({ stepId, onChangeStepId, params, modalName }: BodyProps) {
-  const [optimisticOperation, setOptimisticOperation] = useState(null);
+  const [optimisticOperation, setOptimisticOperation] = useState<Operation | undefined>(undefined);
   const [transactionError, setTransactionError] = useState(null);
   const [signed, setSigned] = useState(false);
-  //const device = useSelector(getCurrentDevice);
   const dispatch = useDispatch();
   const { t } = useTranslation();
 
   const {
     transaction,
-    setTransaction,
     updateTransaction,
     account,
-    parentAccount,
     status,
     bridgeError,
     bridgePending,
   } = useBridgeTransaction(() => {
     const { account } = params;
-    const bridge = getAccountBridge(account, undefined);
+    const bridge = getAccountBridge(account);
     if (account.type !== "Account") {
       throw new Error("account exptected");
     }
-    const transaction = bridge.updateTransaction(bridge.createTransaction(account), {
+    const transaction: Transaction = bridge.updateTransaction(bridge.createTransaction(account), {
       model: {
         kind: "token.createATA",
         uiState: {
@@ -80,7 +77,7 @@ export default function Body({ stepId, onChangeStepId, params, modalName }: Body
         },
       },
     });
-    return { account, parentAccount: undefined, transaction };
+    return { account, transaction };
   });
 
   if (!account) {
@@ -91,23 +88,21 @@ export default function Body({ stepId, onChangeStepId, params, modalName }: Body
     throw new Error("transaction required");
   }
 
-  //const handleStepChange = useCallback(e => onChangeStepId(e.id), [onChangeStepId]);
-
   const handleRetry = () => {
     setTransactionError(null);
     onChangeStepId("tokens");
   };
 
-  const handleTransactionError = useCallback((error: Error) => {
+  const handleTransactionError = (error: Error) => {
     if (!(error instanceof UserRefusedOnDevice)) {
       logger.critical(error);
     }
     setTransactionError(error);
-  }, []);
+  };
 
   const handleOperationBroadcasted = (optimisticOperation: Operation) => {
     dispatch(
-      updateAccountWithUpdater(account.id, account =>
+      updateAccountWithUpdater(account.id, (account: Account) =>
         addPendingOperation(account, optimisticOperation),
       ),
     );
@@ -121,19 +116,11 @@ export default function Body({ stepId, onChangeStepId, params, modalName }: Body
   const error = transactionError || bridgeError || tokenStatusError;
   const warning = status.warnings.token;
 
-  const errorSteps = [];
-
-  if (transactionError) {
-    errorSteps.push(2);
-  } else if (bridgeError) {
-    errorSteps.push(0);
-  }
+  const errorSteps = transactionError ? [2] : bridgeError ? [0] : [];
 
   const stepperProps: StepperProps = {
     title: t("solana.optIn.flow.title"),
-    //device,
     account,
-    //parentAccount,
     transaction,
     signed,
     stepId,
@@ -142,27 +129,21 @@ export default function Body({ stepId, onChangeStepId, params, modalName }: Body
     disabledSteps: [],
     hideBreadcrumb: !!error || !!warning,
     onRetry: handleRetry,
-    onStepChange: ({ id }: Step) => {
-      return onChangeStepId(id);
-    },
-    onClose: () => {
-      dispatch(closeModal(modalName));
-      //return closeModal(modalName);
-    },
+    onStepChange: ({ id }: Step) => onChangeStepId(id),
+    onClose: () => dispatch(closeModal(modalName)),
     error,
     warning,
     status,
     optimisticOperation,
-    //openModal,
     setSigned,
-    onChangeTransaction: setTransaction,
-    onUpdateTransaction: updateTransaction,
+    onUpdateTransaction: updateTransaction as any,
     onOperationBroadcasted: handleOperationBroadcasted,
     onTransactionError: handleTransactionError,
     t,
-    //transitionTo
+    // correct fn will be provided by stepper to each step
+    transitionTo: (_stepId: string) => {},
     bridgePending,
-  } as any;
+  };
 
   return (
     <Stepper {...stepperProps}>

@@ -2690,7 +2690,11 @@
             "title": "Device"
           },
           "confirmation": {
-            "title": "Confirmation"
+            "title": "Confirmation",
+            "success": {
+              "title": "You have successfully added the asset.",
+              "text": "You will see the token when the blockchain confirms the transaction."
+            }
           }
         }
       }
