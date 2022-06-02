@@ -1,9 +1,11 @@
 import { Account, AccountLike, TokenAccount } from "@ledgerhq/live-common/lib/types";
+import { tokenAccCloseableState } from "@ledgerhq/live-common/lib/families/solana/logic";
 import { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { openModal } from "~/renderer/actions/modals";
 import IconCoins from "~/renderer/icons/Coins";
+import { sweetch } from "@ledgerhq/live-common/lib/families/solana/utils";
 
 type Props = {
   account: AccountLike;
@@ -37,7 +39,11 @@ const AccountHeaderActions = ({ account, parentAccount }: Props) => {
   return [];
 };
 
-function mainAccActions(account: Account, dispatch: any, t: TFunction): Action[] {
+function mainAccActions(
+  account: Account,
+  dispatch: ReturnType<typeof useDispatch>,
+  t: TFunction,
+): Action[] {
   const { solanaResources } = account;
   const launchStakingFlow = () => {
     dispatch(
@@ -65,7 +71,7 @@ function mainAccActions(account: Account, dispatch: any, t: TFunction): Action[]
 function tokenAccActions(
   account: TokenAccount,
   parentAccount: Account,
-  dispatch: any,
+  dispatch: ReturnType<typeof useDispatch>,
   t: TFunction,
 ): Action[] {
   const launchOptOutFlow = () =>
@@ -75,17 +81,21 @@ function tokenAccActions(
       }),
     );
 
-  const isZeroBalance = account.balance.isZero();
+  const closeableState = tokenAccCloseableState(account, parentAccount);
 
   return [
     {
       key: "solana.optOut",
       onClick: launchOptOutFlow,
       icon: IconCoins,
-      // todo: transalte
-      label: "Opt Out",
-      disabled: !isZeroBalance,
-      tooltip: isZeroBalance ? undefined : t("solana.optOut.mustBeZeroBalanceToOptOut"),
+      label: t("solana.optOut.actionTitle"),
+      disabled: !closeableState.closeable,
+      tooltip: closeableState.closeable
+        ? undefined
+        : sweetch(closeableState.reason, {
+            frozen: t("solana.optOut.nonCloseableAccReason.frozen"),
+            nonZeroBalance: t("solana.optOut.nonCloseableAccReason.nonZeroBalance"),
+          }),
     },
   ];
 }

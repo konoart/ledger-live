@@ -1,6 +1,7 @@
 import { findTokenById } from "@ledgerhq/cryptoassets";
+import { NATIVE_MINT } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
-import { TokenAccount } from "../../types/account";
+import { Account, TokenAccount } from "../../types/account";
 import { StakeMeta } from "./api/chain/account/stake";
 import { SolanaStake, StakeAction } from "./types";
 import { assertUnreachable } from "./utils";
@@ -127,4 +128,49 @@ export function stakeActivePercent(stake: SolanaStake) {
     return 0;
   }
   return (stake.activation.active / amount) * 100;
+}
+
+export function tokenAccCloseableState(
+  tokenAccount: TokenAccount,
+  parentAccount: Account
+):
+  | {
+      closeable: true;
+    }
+  | {
+      closeable: false;
+      reason: "frozen" | "nonZeroBalance";
+    } {
+  const { solanaResources } = parentAccount;
+  if (solanaResources === undefined) {
+    throw new Error("solana resources must be defined");
+  }
+
+  const mint = toTokenMint(tokenAccount.token.id);
+
+  const assocTokenAccMetadata = solanaResources.assocTokenAccsMetadata.find(
+    (item) => item.mint === mint
+  );
+
+  if (assocTokenAccMetadata === undefined) {
+    throw new Error("could not find assoc token acc metadata");
+  }
+
+  if (assocTokenAccMetadata.isFrozen) {
+    return {
+      closeable: false,
+      reason: "frozen",
+    };
+  }
+
+  if (mint !== NATIVE_MINT.toBase58() && !tokenAccount.balance.isZero()) {
+    return {
+      closeable: false,
+      reason: "nonZeroBalance",
+    };
+  }
+
+  return {
+    closeable: true,
+  };
 }

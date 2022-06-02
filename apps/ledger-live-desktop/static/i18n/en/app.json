@@ -2700,7 +2700,11 @@
       }
     },
     "optOut": {
-      "mustBeZeroBalanceToOptOut": "Balance must be 0 to be able to opt out"
+      "actionTitle": "Opt Out",
+      "nonCloseableAccReason": {
+        "frozen": "The on chain account is frozen",
+        "nonZeroBalance": "Balance must be 0 to be able to opt out"
+      }
     }
   },
   "delegation": {

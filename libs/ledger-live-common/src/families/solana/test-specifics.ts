@@ -117,6 +117,7 @@ async function runStakeTest(stakeTestSpec: StakeTestSpec) {
           },
         } as SolanaStake,
       ],
+      assocTokenAccsMetadata: [],
     },
   };
 

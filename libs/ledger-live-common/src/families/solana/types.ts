@@ -207,11 +207,14 @@ export type SolanaStakeWithMeta = {
 
 export type SolanaResources = {
   stakes: SolanaStake[];
+  assocTokenAccsMetadata: {
+    accAddr: string;
+    mint: string;
+    isFrozen: boolean;
+  }[];
 };
 
-export type SolanaResourcesRaw = {
-  stakes: string;
-};
+export type SolanaResourcesRaw = SolanaResources;
 
 export type SolanaValidator = {
   voteAccAddr: string;

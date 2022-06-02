@@ -49,7 +49,7 @@ import {
   toTokenMint,
   withdrawableFromStake,
 } from "./logic";
-import { SolanaStake } from "./types";
+import { SolanaResources, SolanaStake } from "./types";
 import { drainSeq } from "./utils";
 
 type OnChainTokenAccount = Awaited<
@@ -96,6 +96,7 @@ export const getAccountShapeWithAPI = async (
   )();
 
   const nextSubAccs: TokenAccount[] = [];
+  const assocTokenAccsMetadata: SolanaResources["assocTokenAccsMetadata"] = [];
 
   for (const [mint, accs] of onChainTokenAccsByMint.entries()) {
     if (!tokenIsListedOnLedger(mint)) {
@@ -111,9 +112,18 @@ export const getAccountShapeWithAPI = async (
       ({ onChainAcc: { pubkey } }) => pubkey.toBase58() === assocTokenAccAddress
     );
 
-    if (assocTokenAcc === undefined) {
+    if (
+      assocTokenAcc === undefined ||
+      assocTokenAcc.info.state === "uninitialized"
+    ) {
       continue;
     }
+
+    assocTokenAccsMetadata.push({
+      accAddr: assocTokenAcc.onChainAcc.pubkey.toBase58(),
+      mint: assocTokenAcc.info.mint.toBase58(),
+      isFrozen: assocTokenAcc.info.state === "frozen",
+    });
 
     const subAcc = subAccByMint.get(mint);
 
@@ -240,6 +250,7 @@ export const getAccountShapeWithAPI = async (
     operationsCount: mainAccTotalOperations.length,
     solanaResources: {
       stakes: sortedStakes,
+      assocTokenAccsMetadata,
     },
   };
 
