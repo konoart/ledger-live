@@ -2698,6 +2698,9 @@
           }
         }
       }
+    },
+    "optOut": {
+      "mustBeZeroBalanceToOptOut": "Balance must be 0 to be able to opt out"
     }
   },
   "delegation": {
