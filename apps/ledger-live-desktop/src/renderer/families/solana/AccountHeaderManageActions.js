@@ -31,14 +31,18 @@ const AccountHeaderActions = ({ account, parentAccount }: Props) => {
     );
   }, [dispatch, account, solanaResources]);
 
-  return [
-    {
-      key: "solana",
-      onClick: onClick,
-      icon: IconCoins,
-      label: t("account.stake"),
-    },
-  ];
+  if (account.type === "Account") {
+    return [
+      {
+        key: "solana",
+        onClick: onClick,
+        icon: IconCoins,
+        label: t("account.stake"),
+      },
+    ];
+  }
+
+  return [];
 };
 
 export default AccountHeaderActions;
