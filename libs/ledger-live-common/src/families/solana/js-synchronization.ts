@@ -1,4 +1,28 @@
+import { getTokenById } from "@ledgerhq/cryptoassets";
+import {
+  InflationReward,
+  ParsedMessageAccount,
+  ParsedTransaction,
+  ParsedTransactionMeta,
+  StakeActivationData,
+} from "@solana/web3.js";
+import BigNumber from "bignumber.js";
+import {
+  compact,
+  filter,
+  flow,
+  groupBy,
+  keyBy,
+  map,
+  pipe,
+  sortBy,
+  sum,
+  toPairs,
+  uniqBy,
+} from "lodash/fp";
+import { emptyHistoryCache } from "../../account";
 import { GetAccountShapeArg0, mergeOps } from "../../bridge/jsHelpers";
+import { encodeOperationId } from "../../operation";
 import {
   Account,
   encodeAccountId,
@@ -6,17 +30,16 @@ import {
   OperationType,
   TokenAccount,
 } from "../../types";
-import BigNumber from "bignumber.js";
-
-import { emptyHistoryCache } from "../../account";
+import { ChainAPI } from "./api";
+import { parseQuiet } from "./api/chain/program";
 import {
   getTransactions,
   ParsedOnChainStakeAccountWithInfo,
+  ParsedOnChainTokenAccountWithInfo,
   toStakeAccountWithInfo,
+  toTokenAccountWithInfo,
   TransactionDescriptor,
 } from "./api/chain/web3";
-import { getTokenById } from "@ledgerhq/cryptoassets";
-import { encodeOperationId } from "../../operation";
 import {
   Awaited,
   encodeAccountIdWithTokenAccountAddress,
@@ -26,35 +49,8 @@ import {
   toTokenMint,
   withdrawableFromStake,
 } from "./logic";
-import {
-  compact,
-  filter,
-  groupBy,
-  keyBy,
-  toPairs,
-  pipe,
-  map,
-  uniqBy,
-  flow,
-  sortBy,
-  sum,
-} from "lodash/fp";
-import { parseQuiet } from "./api/chain/program";
-import {
-  InflationReward,
-  ParsedTransactionMeta,
-  ParsedMessageAccount,
-  ParsedTransaction,
-  StakeActivationData,
-} from "@solana/web3.js";
-import { ChainAPI } from "./api";
-import {
-  ParsedOnChainTokenAccountWithInfo,
-  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-  toTokenAccountWithInfo,
-} from "./api/chain/web3";
-import { drainSeq } from "./utils";
 import { SolanaStake } from "./types";
+import { drainSeq } from "./utils";
 
 type OnChainTokenAccount = Awaited<
   ReturnType<typeof getAccount>
@@ -121,7 +117,7 @@ export const getAccountShapeWithAPI = async (
 
     const subAcc = subAccByMint.get(mint);
 
-    const lastSyncedTxSignature = subAcc?.operations?.[0].hash;
+    const lastSyncedTxSignature = subAcc?.operations?.[0]?.hash;
 
     const txs = await getTransactions(
       assocTokenAcc.onChainAcc.pubkey.toBase58(),
@@ -213,7 +209,7 @@ export const getAccountShapeWithAPI = async (
   );
 
   const lastOpSeqNumber =
-    mainInitialAcc?.operations?.[0]?.transactionSequenceNumber ?? 0;
+    mainInitialAcc?.operations[0]?.transactionSequenceNumber ?? 0;
   const newOpsCount = newMainAccTxs.length;
 
   const newMainAccOps = newMainAccTxs
@@ -222,7 +218,6 @@ export const getAccountShapeWithAPI = async (
         tx,
         mainAccountId,
         mainAccAddress,
-        // transactions are ordered by date (0'th - most recent tx)
         lastOpSeqNumber + newOpsCount - i
       )
     )
@@ -236,8 +231,6 @@ export const getAccountShapeWithAPI = async (
   const totalStakedBalance = sum(stakes.map((s) => s.stakeAccBalance));
 
   const shape: Partial<Account> = {
-    // uncomment when tokens are supported
-    // subAccounts as undefined makes TokenList disappear in desktop
     subAccounts: nextSubAccs,
     id: mainAccountId,
     blockHeight,
@@ -281,7 +274,9 @@ function newSubAcc({
   const balance = new BigNumber(assocTokenAcc.info.tokenAmount.amount);
 
   const newOps = compact(
-    txs.map((tx) => txToTokenAccOperation(tx, assocTokenAcc, accountId))
+    txs.map((tx, i) =>
+      txToTokenAccOperation(tx, assocTokenAcc, accountId, txs.length - i)
+    )
   );
 
   return {
@@ -312,8 +307,17 @@ function patchedSubAcc({
 }): TokenAccount {
   const balance = new BigNumber(assocTokenAcc.info.tokenAmount.amount);
 
+  const lastOpSeqNum = subAcc.operations[0]?.transactionSequenceNumber ?? 0;
+
   const newOps = compact(
-    txs.map((tx) => txToTokenAccOperation(tx, assocTokenAcc, subAcc.id))
+    txs.map((tx, i) =>
+      txToTokenAccOperation(
+        tx,
+        assocTokenAcc,
+        subAcc.id,
+        lastOpSeqNum + txs.length - i
+      )
+    )
   );
 
   const totalOps = mergeOps(subAcc.operations, newOps);
@@ -423,7 +427,8 @@ function getOpExtra(tx: TransactionDescriptor): Record<string, any> {
 function txToTokenAccOperation(
   tx: TransactionDescriptor,
   assocTokenAcc: OnChainTokenAccount,
-  accountId: string
+  accountId: string,
+  txSeqNumber: number
 ): Operation | undefined {
   if (!tx.info.blockTime || !tx.parsed.meta) {
     return undefined;
@@ -475,6 +480,7 @@ function txToTokenAccOperation(
     hasFailed: !!tx.info.err,
     extra: getOpExtra(tx),
     blockHash: tx.parsed.transaction.message.recentBlockhash,
+    transactionSequenceNumber: txSeqNumber,
   };
 }
 
