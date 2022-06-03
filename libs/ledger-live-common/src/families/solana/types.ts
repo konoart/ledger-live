@@ -19,6 +19,13 @@ export type TokenCreateATACommand = {
   associatedTokenAccountAddress: string;
 };
 
+export type TokenCloseATACommand = {
+  kind: "token.closeATA";
+  owner: string;
+  associatedTokenAccountAddress: string;
+  destinationAddress: string;
+};
+
 export type StakeCreateAccountCommand = {
   kind: "stake.createAccount";
   fromAccAddress: string;
@@ -82,6 +89,7 @@ export type Command =
   | TransferCommand
   | TokenTransferCommand
   | TokenCreateATACommand
+  | TokenCloseATACommand
   | StakeCreateAccountCommand
   | StakeDelegateCommand
   | StakeUndelegateCommand
@@ -114,6 +122,13 @@ export type TokenCreateATATransaction = {
   kind: "token.createATA";
   uiState: {
     tokenId: string;
+  };
+};
+
+export type TokenCloseATATransaction = {
+  kind: "token.closeATA";
+  uiState: {
+    subAccountId: string;
   };
 };
 
@@ -159,6 +174,7 @@ export type TransactionModel = { commandDescriptor?: CommandDescriptor } & (
   | TransferTransaction
   | TokenTransferTransaction
   | TokenCreateATATransaction
+  | TokenCloseATATransaction
   | StakeCreateAccountTransaction
   | StakeDelegateTransaction
   | StakeUndelegateTransaction

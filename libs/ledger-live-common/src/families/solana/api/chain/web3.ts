@@ -1,5 +1,6 @@
 import {
   createAssociatedTokenAccountInstruction,
+  createCloseAccountInstruction,
   createTransferCheckedInstruction,
   getAssociatedTokenAddress,
 } from "@solana/spl-token";
@@ -21,6 +22,7 @@ import {
   StakeSplitCommand,
   StakeUndelegateCommand,
   StakeWithdrawCommand,
+  TokenCloseATACommand,
   TokenCreateATACommand,
   TokenTransferCommand,
   TransferCommand,
@@ -276,7 +278,7 @@ export async function getStakeAccountAddressWithSeed({
   return pubkey.toBase58();
 }
 
-export function buildCreateAssociatedTokenAccountInstruction({
+export function buildCreateAssociatedTokenAccountInstructions({
   mint,
   owner,
   associatedTokenAccountAddress,
@@ -291,6 +293,26 @@ export function buildCreateAssociatedTokenAccountInstruction({
       associatedTokenAccPubkey,
       ownerPubKey,
       mintPubkey
+    ),
+  ];
+
+  return instructions;
+}
+
+export function buildCloseAssociatedTokenAccountInstructions({
+  destinationAddress,
+  associatedTokenAccountAddress,
+  owner,
+}: TokenCloseATACommand): TransactionInstruction[] {
+  const ownerPubKey = new PublicKey(owner);
+  const destinationPubkey = new PublicKey(destinationAddress);
+  const associatedTokenAccPubkey = new PublicKey(associatedTokenAccountAddress);
+
+  const instructions: TransactionInstruction[] = [
+    createCloseAccountInstruction(
+      associatedTokenAccPubkey,
+      destinationPubkey,
+      ownerPubKey
     ),
   ];
 

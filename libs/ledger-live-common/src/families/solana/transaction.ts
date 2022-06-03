@@ -6,6 +6,7 @@ import type {
   StakeSplitCommand,
   StakeUndelegateCommand,
   StakeWithdrawCommand,
+  TokenCloseATACommand,
   TokenCreateATACommand,
   TokenTransferCommand,
   Transaction,
@@ -76,6 +77,8 @@ function formatCommand(
       return formatTokenTransfer(mainAccount, tx, command);
     case "token.createATA":
       return formatCreateATA(command);
+    case "token.closeATA":
+      return formatCloseATA(mainAccount, tx);
     case "stake.createAccount":
       return formatStakeCreateAccount(mainAccount, tx, command);
     case "stake.delegate":
@@ -163,24 +166,35 @@ function formatTokenTransfer(
 
 function formatCreateATA(command: TokenCreateATACommand) {
   const token = getTokenById(toTokenId(command.mint));
-  const str = [`  OPT IN TOKEN: ${token.ticker}`].filter(Boolean).join("\n");
-  return "\n" + str;
+  return ["", `  OPT IN TOKEN: ${token.ticker}`].join("\n");
+}
+
+function formatCloseATA(mainAccount: Account, tx: Transaction) {
+  if (!tx.subAccountId) {
+    throw new Error("expected subaccountId on transaction");
+  }
+
+  const subAccount = findSubAccountById(mainAccount, tx.subAccountId);
+
+  if (!subAccount || subAccount.type !== "TokenAccount") {
+    throw new Error("token subaccount expected");
+  }
+
+  const token = getTokenById(subAccount.token.id);
+  return ["", `  OPT OUT TOKEN: ${token.ticker}`].join("\n");
 }
 
 function formatStakeDelegate(command: StakeDelegateCommand) {
   const str = [
     `  DELEGATE: ${command.stakeAccAddr}`,
     `  TO: ${command.voteAccAddr}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  ].join("\n");
   return "\n" + str;
 }
 
+// todo: mb remove \n + ?
 function formatStakeUndelegate(command: StakeUndelegateCommand) {
-  const str = [`  UNDELEGATE: ${command.stakeAccAddr}`]
-    .filter(Boolean)
-    .join("\n");
+  const str = [`  UNDELEGATE: ${command.stakeAccAddr}`].join("\n");
   return "\n" + str;
 }
 

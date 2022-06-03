@@ -39,6 +39,8 @@ const createDummyTx = (account: Account, kind: TransactionModel["kind"]) => {
       return createDummyStakeWithdrawTx(account);
     case "token.createATA":
       return createDummyTokenCreateATATx(account);
+    case "token.closeATA":
+      return createDummyTokenCloseATATx(account);
     case "stake.split":
     case "token.transfer":
       throw new Error(`not implemented for <${kind}>`);
@@ -158,6 +160,25 @@ const createDummyTokenCreateATATx = (account: Account): Transaction => {
           kind: "token.createATA",
           associatedTokenAccountAddress: randomAddresses[0],
           mint: randomAddresses[1],
+          owner: account.freshAddress,
+        },
+        ...commandDescriptorCommons,
+      },
+    },
+  };
+};
+
+const createDummyTokenCloseATATx = (account: Account): Transaction => {
+  return {
+    ...createTransaction({} as any),
+    model: {
+      kind: "token.closeATA",
+      uiState: {} as any,
+      commandDescriptor: {
+        command: {
+          kind: "token.closeATA",
+          destinationAddress: randomAddresses[0],
+          associatedTokenAccountAddress: randomAddresses[1],
           owner: account.freshAddress,
         },
         ...commandDescriptorCommons,

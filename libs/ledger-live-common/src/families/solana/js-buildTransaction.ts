@@ -3,12 +3,13 @@ import type { Command, Transaction } from "./types";
 import {
   buildTransferInstructions,
   buildTokenTransferInstructions,
-  buildCreateAssociatedTokenAccountInstruction,
+  buildCreateAssociatedTokenAccountInstructions,
   buildStakeCreateAccountInstructions,
   buildStakeDelegateInstructions,
   buildStakeUndelegateInstructions,
   buildStakeWithdrawInstructions,
   buildStakeSplitInstructions,
+  buildCloseAssociatedTokenAccountInstructions,
 } from "./api/chain/web3";
 import { assertUnreachable } from "./utils";
 import {
@@ -67,7 +68,9 @@ function buildInstructionsForCommand(
     case "token.transfer":
       return buildTokenTransferInstructions(command);
     case "token.createATA":
-      return buildCreateAssociatedTokenAccountInstruction(command);
+      return buildCreateAssociatedTokenAccountInstructions(command);
+    case "token.closeATA":
+      return buildCloseAssociatedTokenAccountInstructions(command);
     case "stake.createAccount":
       return buildStakeCreateAccountInstructions(command);
     case "stake.delegate":

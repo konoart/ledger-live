@@ -7,7 +7,7 @@ import {
   RecipientRequired,
 } from "@ledgerhq/errors";
 import BigNumber from "bignumber.js";
-import { attempt } from "lodash/fp";
+import { attempt, cloneDeep, T } from "lodash/fp";
 import { findSubAccountById } from "../../account";
 import type { Account } from "../../types";
 import { ChainAPI } from "./api";
@@ -55,6 +55,7 @@ import type {
   StakeSplitTransaction,
   StakeUndelegateTransaction,
   StakeWithdrawTransaction,
+  TokenCloseATATransaction,
   TokenCreateATATransaction,
   TokenRecipientDescriptor,
   TokenTransferTransaction,
@@ -79,6 +80,12 @@ async function deriveCommandDescriptor(
       return deriveTokenTransferCommandDescriptor(mainAccount, tx, model, api);
     case "token.createATA":
       return deriveCreateAssociatedTokenAccountCommandDescriptor(
+        mainAccount,
+        model,
+        api
+      );
+    case "token.closeATA":
+      return deriveCloseAssociatedTokenAccountCommandDescriptor(
         mainAccount,
         model,
         api
@@ -319,6 +326,46 @@ async function deriveCreateAssociatedTokenAccountCommandDescriptor(
     command: {
       kind: model.kind,
       mint: mint,
+      owner: mainAccount.freshAddress,
+      associatedTokenAccountAddress,
+    },
+    warnings,
+    errors,
+  };
+}
+
+async function deriveCloseAssociatedTokenAccountCommandDescriptor(
+  mainAccount: Account,
+  model: TransactionModel & { kind: TokenCloseATATransaction["kind"] },
+  api: ChainAPI
+): Promise<CommandDescriptor> {
+  const errors: Record<string, Error> = {};
+  const warnings: Record<string, Error> = {};
+
+  const subAccount = findSubAccountById(
+    mainAccount,
+    model.uiState.subAccountId
+  );
+
+  if (!subAccount || subAccount.type !== "TokenAccount") {
+    throw new Error("subaccount not found");
+  }
+
+  const associatedTokenAccountAddress = decodeAccountIdWithTokenAccountAddress(
+    subAccount.id
+  ).address;
+
+  const fee = await estimateTxFee(api, mainAccount, "token.closeATA");
+
+  if (mainAccount.spendableBalance.lt(fee)) {
+    errors.fee = new NotEnoughBalance();
+  }
+
+  return {
+    fee,
+    command: {
+      kind: model.kind,
+      destinationAddress: mainAccount.freshAddress,
       owner: mainAccount.freshAddress,
       associatedTokenAccountAddress,
     },
@@ -635,21 +682,26 @@ async function deriveStakeSplitCommandDescriptor(
   };
 }
 
-// if subaccountid present - it's a token transfer
+// ledger idiom - if subAccountId is present - it's a token acc tx
 function updateModelIfSubAccountIdPresent(tx: Transaction): Transaction {
   if (tx.subAccountId) {
-    return {
-      ...tx,
-      model: {
-        kind: "token.transfer",
-        uiState: {
-          ...tx.model.uiState,
-          subAccountId: tx.subAccountId,
-        },
-      },
-    };
+    switch (tx.model.kind) {
+      case "token.transfer":
+      case "token.closeATA":
+        return {
+          ...tx,
+          model: {
+            kind: tx.model.kind,
+            uiState: {
+              ...tx.model.uiState,
+              subAccountId: tx.subAccountId,
+            },
+          },
+        };
+      default:
+        break;
+    }
   }
-
   return tx;
 }
 

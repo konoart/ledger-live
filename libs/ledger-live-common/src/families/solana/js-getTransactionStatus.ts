@@ -42,6 +42,7 @@ function getAmount(command: Command) {
     case "stake.withdraw":
       return command.amount;
     case "token.createATA":
+    case "token.closeATA":
     case "stake.delegate":
     case "stake.undelegate":
     case "stake.split":
@@ -59,6 +60,7 @@ function getTotalSpent({ command, fee }: CommandDescriptor) {
     case "token.transfer":
       return Math.max(command.amount, 0);
     case "token.createATA":
+    case "token.closeATA":
     case "stake.delegate":
     case "stake.undelegate":
     case "stake.withdraw":

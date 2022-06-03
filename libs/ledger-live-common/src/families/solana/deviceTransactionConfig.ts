@@ -9,6 +9,7 @@ import type {
   StakeSplitCommand,
   StakeUndelegateCommand,
   StakeWithdrawCommand,
+  TokenCloseATACommand,
   TokenCreateATACommand,
   TokenTransferCommand,
   Transaction,
@@ -51,6 +52,8 @@ function fieldsForCommand(
       return fieldsForTokenTransfer(command);
     case "token.createATA":
       return fieldsForCreateATA(command);
+    case "token.closeATA":
+      return fieldsForCloseATA(command);
     case "stake.createAccount":
       return fieldsForStakeCreateAccount(command, account);
     case "stake.delegate":
@@ -159,6 +162,14 @@ function fieldsForCreateATA(
 
   return fields;
 }
+
+function fieldsForCloseATA(
+  command: TokenCloseATACommand
+): DeviceTransactionField[] {
+  const fields: Array<DeviceTransactionField> = [];
+  return fields;
+}
+
 function fieldsForStakeCreateAccount(
   command: StakeCreateAccountCommand,
   account: AccountLike

@@ -133,7 +133,9 @@ function buildOptimisticOperationForCommand(
         commandDescriptor
       );
     case "token.createATA":
-      return optimisticOpForCATA(account, commandDescriptor);
+      return optimisticOpForCreateATA(account, commandDescriptor);
+    case "token.closeATA":
+      return optimisticOpForCloseATA(account, commandDescriptor);
     case "stake.createAccount":
       return optimisticOpForStakeCreateAccount(
         account,
@@ -209,11 +211,28 @@ function optimisticOpForTokenTransfer(
   };
 }
 
-function optimisticOpForCATA(
+function optimisticOpForCreateATA(
   account: Account,
   commandDescriptor: CommandDescriptor
 ): Operation {
   const opType: OperationType = "OPT_IN";
+
+  return {
+    ...optimisticOpcommons(commandDescriptor),
+    id: encodeOperationId(account.id, "", opType),
+    type: opType,
+    accountId: account.id,
+    senders: [],
+    recipients: [],
+    value: new BigNumber(commandDescriptor.fee),
+  };
+}
+
+function optimisticOpForCloseATA(
+  account: Account,
+  commandDescriptor: CommandDescriptor
+): Operation {
+  const opType: OperationType = "OPT_OUT";
 
   return {
     ...optimisticOpcommons(commandDescriptor),
@@ -247,6 +266,7 @@ function getOpExtras(command: Command): Record<string, any> {
       }
       break;
     case "token.createATA":
+    case "token.closeATA":
     case "stake.createAccount":
     case "stake.delegate":
     case "stake.undelegate":

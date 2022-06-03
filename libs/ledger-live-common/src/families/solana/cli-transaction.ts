@@ -1,11 +1,11 @@
-import { findTokenById, findTokenByTicker } from "@ledgerhq/cryptoassets";
+import { findTokenByTicker, getTokenById } from "@ledgerhq/cryptoassets";
 import invariant from "invariant";
 import { getAccountCurrency } from "../../account";
 import type {
-  Transaction,
-  AccountLike,
   Account,
+  AccountLike,
   AccountLikeArray,
+  Transaction,
 } from "../../types";
 import { Transaction as SolanaTransaction } from "./types";
 import { assertUnreachable } from "./utils";
@@ -13,6 +13,7 @@ import { assertUnreachable } from "./utils";
 const modes = [
   "send",
   "optIn",
+  "optOut",
   "stake.createAccount",
   "stake.delegate",
   "stake.undelegate",
@@ -101,11 +102,7 @@ function inferTransactions(
           throw new Error("expected main account");
         }
 
-        const tokenCurrency = findTokenByTicker(token) ?? findTokenById(token);
-
-        if (!tokenCurrency) {
-          throw new Error(`token <${token}> not found`);
-        }
+        const tokenCurrency = findTokenByTicker(token) ?? getTokenById(token);
 
         const solanaTx: SolanaTransaction = {
           ...transaction,
@@ -113,6 +110,28 @@ function inferTransactions(
             kind: "token.createATA",
             uiState: {
               tokenId: tokenCurrency.id,
+            },
+          },
+        };
+        return solanaTx;
+      }
+      case "optOut": {
+        if (token === undefined) {
+          throw new Error("token required");
+        }
+
+        if (account.type !== "TokenAccount") {
+          throw new Error("expected token account");
+        }
+        const subAccountId = account.id;
+
+        const solanaTx: SolanaTransaction = {
+          ...transaction,
+          subAccountId,
+          model: {
+            kind: "token.closeATA",
+            uiState: {
+              subAccountId,
             },
           },
         };
@@ -192,7 +211,8 @@ function inferAccounts(
   const mode = inferMode(opts.mode);
 
   switch (mode) {
-    case "send": {
+    case "send":
+    case "optOut": {
       if (!opts.token) {
         return [mainAccount];
       }
@@ -229,7 +249,6 @@ function inferAccounts(
     case "stake.undelegate":
     case "stake.withdraw":
     case "stake.split":
-      // TODO: infer stake account for stake ops
       return [mainAccount];
     default:
       return assertUnreachable(mode);

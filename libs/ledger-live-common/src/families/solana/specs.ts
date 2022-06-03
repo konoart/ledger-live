@@ -489,6 +489,7 @@ function expectCorrectMemo(input: TransactionTestInput<Transaction>) {
       expect(operation.extra.memo).toBe(transaction.model.uiState.memo);
       break;
     case "token.createATA":
+    case "token.closeATA":
     case "stake.createAccount":
     case "stake.delegate":
     case "stake.undelegate":

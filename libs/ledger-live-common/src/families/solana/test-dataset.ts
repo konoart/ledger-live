@@ -256,6 +256,7 @@ function memoIsTooLong(): TransactionTestSpec[] {
             },
           };
         case "token.createATA":
+        case "token.closeATA":
         case "stake.createAccount":
         case "stake.delegate":
         case "stake.undelegate":
