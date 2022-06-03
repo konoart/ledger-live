@@ -32,7 +32,10 @@ import {
   SolanaStakeNoStakeAuth,
   SolanaStakeNoWithdrawAuth,
   SolanaTokenAccounNotInitialized,
+  SolanaTokenAccountHasNonZeroBalance,
   SolanaTokenAccountHoldsAnotherToken,
+  SolanaTokenAccountIsFrozen,
+  SolanaTokenIsAlreadyAdded,
   SolanaTokenNotFound,
   SolanaTokenRecipientIsSenderATA,
   SolanaTokenRequired,
@@ -65,7 +68,7 @@ import type {
   TransferCommand,
   TransferTransaction,
 } from "./types";
-import { assertUnreachable } from "./utils";
+import { assertUnreachable, sweetch } from "./utils";
 
 async function deriveCommandDescriptor(
   mainAccount: Account,
@@ -296,22 +299,35 @@ async function deriveCreateAssociatedTokenAccountCommandDescriptor(
   const errors: Record<string, Error> = {};
   const warnings: Record<string, Error> = {};
   const { tokenId } = model.uiState;
-  const tokenOrError = attempt(() => getTokenById(tokenId));
 
-  if (tokenOrError instanceof Error) {
-    errors.token =
-      model.uiState.tokenId === ""
-        ? new SolanaTokenRequired()
-        : new SolanaTokenNotFound();
+  const params = {
+    mint: "",
+    associatedTokenAccountAddress: "",
+  };
+
+  if (tokenId === "") {
+    errors.token = new SolanaTokenRequired();
+  } else {
+    const token = attempt(() => getTokenById(tokenId));
+    if (token instanceof Error) {
+      errors.token = new SolanaTokenNotFound();
+    } else {
+      if (
+        (mainAccount.subAccounts ?? []).some(
+          (acc) => acc.type === "TokenAccount" && acc.token.id === token.id
+        )
+      ) {
+        errors.token = new SolanaTokenIsAlreadyAdded();
+      } else {
+        params.mint = toTokenMint(token.id);
+        params.associatedTokenAccountAddress =
+          await api.findAssocTokenAccAddress(
+            mainAccount.freshAddress,
+            params.mint
+          );
+      }
+    }
   }
-
-  const mint =
-    tokenOrError instanceof Error ? "" : toTokenMint(tokenOrError.id);
-
-  const associatedTokenAccountAddress =
-    tokenOrError instanceof Error
-      ? ""
-      : await api.findAssocTokenAccAddress(mainAccount.freshAddress, mint);
 
   const txFee = await estimateTxFee(api, mainAccount, "token.createATA");
   const assocAccRentExempt = await api.getAssocTokenAccMinNativeBalance();
@@ -326,9 +342,9 @@ async function deriveCreateAssociatedTokenAccountCommandDescriptor(
     fee,
     command: {
       kind: model.kind,
-      mint: mint,
+      mint: params.mint,
       owner: mainAccount.freshAddress,
-      associatedTokenAccountAddress,
+      associatedTokenAccountAddress: params.associatedTokenAccountAddress,
     },
     warnings,
     errors,
@@ -352,8 +368,14 @@ async function deriveCloseAssociatedTokenAccountCommandDescriptor(
     throw new Error("subaccount not found");
   }
 
-  // TODO: check if not possible to close it!
-  //tokenAccCloseableState(sub//a)
+  const closeableState = tokenAccCloseableState(subAccount, mainAccount);
+
+  if (!closeableState.closeable) {
+    errors.tokenAcc = sweetch(closeableState.reason, {
+      frozen: new SolanaTokenAccountIsFrozen(),
+      nonZeroBalance: new SolanaTokenAccountHasNonZeroBalance(),
+    });
+  }
 
   const associatedTokenAccountAddress = decodeAccountIdWithTokenAccountAddress(
     subAccount.id

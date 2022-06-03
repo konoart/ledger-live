@@ -35,6 +35,18 @@ export const SolanaTokenNotFound = createCustomErrorClass(
   "SolanaTokenNotFound"
 );
 
+export const SolanaTokenAccountIsFrozen = createCustomErrorClass(
+  "SolanaTokenAccountIsFrozen"
+);
+
+export const SolanaTokenAccountHasNonZeroBalance = createCustomErrorClass(
+  "SolanaTokenAccountHasNonZeroBalance"
+);
+
+export const SolanaTokenIsAlreadyAdded = createCustomErrorClass(
+  "SolanaTokenIsAlreadyAdded"
+);
+
 export const SolanaValidatorRequired = createCustomErrorClass(
   "SolanaValidatorRequired"
 );
