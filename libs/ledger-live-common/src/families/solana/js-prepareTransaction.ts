@@ -44,6 +44,7 @@ import {
   isEd25519Address,
   isValidBase58Address,
   MAX_MEMO_LENGTH,
+  tokenAccCloseableState,
   toTokenMint,
 } from "./logic";
 import { estimateTxFee } from "./tx-fees";
@@ -350,6 +351,9 @@ async function deriveCloseAssociatedTokenAccountCommandDescriptor(
   if (!subAccount || subAccount.type !== "TokenAccount") {
     throw new Error("subaccount not found");
   }
+
+  // TODO: check if not possible to close it!
+  //tokenAccCloseableState(sub//a)
 
   const associatedTokenAccountAddress = decodeAccountIdWithTokenAccountAddress(
     subAccount.id

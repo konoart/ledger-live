@@ -127,7 +127,6 @@ function inferTransactions(
 
         const solanaTx: SolanaTransaction = {
           ...transaction,
-          subAccountId,
           model: {
             kind: "token.closeATA",
             uiState: {

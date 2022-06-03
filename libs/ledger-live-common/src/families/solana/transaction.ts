@@ -170,11 +170,14 @@ function formatCreateATA(command: TokenCreateATACommand) {
 }
 
 function formatCloseATA(mainAccount: Account, tx: Transaction) {
-  if (!tx.subAccountId) {
-    throw new Error("expected subaccountId on transaction");
+  if (tx.model.kind !== "token.closeATA") {
+    throw new Error("expected <token.closeATA> transaction");
   }
 
-  const subAccount = findSubAccountById(mainAccount, tx.subAccountId);
+  const subAccount = findSubAccountById(
+    mainAccount,
+    tx.model.uiState.subAccountId
+  );
 
   if (!subAccount || subAccount.type !== "TokenAccount") {
     throw new Error("token subaccount expected");
