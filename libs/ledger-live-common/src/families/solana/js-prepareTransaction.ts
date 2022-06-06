@@ -7,9 +7,9 @@ import {
   RecipientRequired,
 } from "@ledgerhq/errors";
 import BigNumber from "bignumber.js";
-import { attempt, cloneDeep, T } from "lodash/fp";
+import { attempt } from "lodash/fp";
 import { findSubAccountById } from "../../account";
-import type { Account } from "../../types";
+import type { Account, TokenAccount } from "../../types";
 import { ChainAPI } from "./api";
 import {
   getMaybeTokenAccount,
@@ -359,9 +359,10 @@ async function deriveCloseAssociatedTokenAccountCommandDescriptor(
   const errors: Record<string, Error> = {};
   const warnings: Record<string, Error> = {};
 
-  const subAccount = findSubAccountById(
-    mainAccount,
-    model.uiState.subAccountId
+  const { tokenId } = model.uiState;
+
+  const subAccount = (mainAccount.subAccounts ?? []).find(
+    (acc) => acc.type === "TokenAccount" && acc.token.id === tokenId
   );
 
   if (!subAccount || subAccount.type !== "TokenAccount") {
@@ -708,26 +709,21 @@ async function deriveStakeSplitCommandDescriptor(
   };
 }
 
-// ledger idiom - if subAccountId is present - it's a token acc tx
+// if subAccountId present - it's a token transfer
 function updateModelIfSubAccountIdPresent(tx: Transaction): Transaction {
   if (tx.subAccountId) {
-    switch (tx.model.kind) {
-      case "token.transfer":
-      case "token.closeATA":
-        return {
-          ...tx,
-          model: {
-            kind: tx.model.kind,
-            uiState: {
-              ...tx.model.uiState,
-              subAccountId: tx.subAccountId,
-            },
-          },
-        };
-      default:
-        break;
-    }
+    return {
+      ...tx,
+      model: {
+        kind: "token.transfer",
+        uiState: {
+          ...tx.model.uiState,
+          subAccountId: tx.subAccountId,
+        },
+      },
+    };
   }
+
   return tx;
 }
 

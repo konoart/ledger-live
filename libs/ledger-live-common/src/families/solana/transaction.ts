@@ -173,16 +173,9 @@ function formatCloseATA(mainAccount: Account, tx: Transaction) {
     throw new Error("expected <token.closeATA> transaction");
   }
 
-  const subAccount = findSubAccountById(
-    mainAccount,
-    tx.model.uiState.subAccountId
-  );
+  const { tokenId } = tx.model.uiState;
 
-  if (!subAccount || subAccount.type !== "TokenAccount") {
-    throw new Error("token subaccount expected");
-  }
-
-  const token = getTokenById(subAccount.token.id);
+  const token = getTokenById(tokenId);
   return ["", `  OPT OUT TOKEN: ${token.ticker}`].join("\n");
 }
 

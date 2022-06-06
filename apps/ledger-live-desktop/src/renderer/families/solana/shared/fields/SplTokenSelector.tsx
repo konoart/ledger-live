@@ -1,7 +1,6 @@
-import { listTokensForCryptoCurrency } from "@ledgerhq/live-common/lib/currencies";
 import { toTokenMint } from "@ledgerhq/live-common/lib/families/solana/logic";
-import { Account, TokenAccount, TokenCurrency } from "@ledgerhq/live-common/lib/types";
-import React, { useMemo, useState } from "react";
+import { TokenCurrency } from "@ledgerhq/live-common/lib/types";
+import React, { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import Box from "~/renderer/components/Box";
 import FirstLetterIcon from "~/renderer/components/FirstLetterIcon";
@@ -11,38 +10,25 @@ import ToolTip from "~/renderer/components/Tooltip";
 import ExclamationCircleThin from "~/renderer/icons/ExclamationCircleThin";
 
 type TokenSelectorProps = {
-  account: Account;
-  selectedTokenId?: string;
+  tokens: TokenCurrency[];
+  selectedToken?: TokenCurrency;
   onTokenSelected: (token: TokenCurrency) => void;
 };
 
-export default function TokenSelector({
-  account,
-  selectedTokenId,
+export default function SplTokenSelector({
+  tokens,
+  selectedToken,
   onTokenSelected,
 }: TokenSelectorProps) {
   const [query, setQuery] = useState("");
   const { t } = useTranslation();
 
-  const tokenAccounts = (account.subAccounts ?? []).filter(
-    (a): a is TokenAccount => a.type === "TokenAccount",
-  );
-
-  const options = listTokensForCryptoCurrency(account.currency);
-  const value = useMemo(() => options.find(({ id }) => id === selectedTokenId), [
-    options,
-    selectedTokenId,
-  ]);
-
   return (
     <Box flow={1} mb={4}>
       <Select
-        value={value}
-        options={options}
+        value={selectedToken}
+        options={tokens}
         getOptionValue={({ name }: TokenCurrency) => name}
-        isOptionDisabled={({ id }: TokenCurrency) =>
-          tokenAccounts.some(({ token }) => token.id === id)
-        }
         renderValue={renderItem}
         renderOption={renderItem}
         onInputChange={setQuery}

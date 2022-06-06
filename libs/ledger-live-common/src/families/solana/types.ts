@@ -128,7 +128,7 @@ export type TokenCreateATATransaction = {
 export type TokenCloseATATransaction = {
   kind: "token.closeATA";
   uiState: {
-    subAccountId: string;
+    tokenId: string;
   };
 };
 

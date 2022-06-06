@@ -1,8 +1,8 @@
 import { getAccountBridge } from "@ledgerhq/live-common/lib/bridge";
-import { listTokensForCryptoCurrency } from "@ledgerhq/live-common/lib/currencies";
-import { TokenCreateATATransaction } from "@ledgerhq/live-common/lib/families/solana/types";
-import { TokenCurrency } from "@ledgerhq/live-common/lib/types";
-import React, { useMemo } from "react";
+import { tokenAccCloseableState } from "@ledgerhq/live-common/lib/families/solana/logic";
+import { TokenCloseATATransaction } from "@ledgerhq/live-common/lib/families/solana/types";
+import { TokenAccount, TokenCurrency } from "@ledgerhq/live-common/lib/types";
+import React from "react";
 import { Trans } from "react-i18next";
 import TrackPage from "~/renderer/analytics/TrackPage";
 import Alert from "~/renderer/components/Alert";
@@ -15,17 +15,15 @@ import { StepperProps } from "../types";
 
 export default function StepTokens({
   account,
+  parentAccount,
   onUpdateTransaction,
   transaction,
   warning,
   error,
 }: StepperProps) {
-  if (account.type !== "Account") {
-    throw new Error("account expected");
-  }
   const { model } = transaction;
 
-  if (model.kind !== "token.createATA") {
+  if (model.kind !== "token.closeATA") {
     throw new Error("expected <token.createATA> tx, but got " + model.kind);
   }
 
@@ -33,8 +31,8 @@ export default function StepTokens({
 
   const onTokenSelected = ({ id: tokenId }: TokenCurrency) => {
     onUpdateTransaction(transaction => {
-      const model: TokenCreateATATransaction = {
-        kind: "token.createATA",
+      const model: TokenCloseATATransaction = {
+        kind: "token.closeATA",
         uiState: {
           tokenId,
         },
@@ -43,25 +41,23 @@ export default function StepTokens({
     });
   };
 
-  const tokens = listTokensForCryptoCurrency(account.currency);
-
-  const alreadyAddedTokens = (account.subAccounts ?? [])
-    .map(acc => (acc.type === "TokenAccount" ? acc.token : undefined))
-    .filter((token): token is TokenCurrency => token !== undefined);
-
-  const alreadyAddedTokensIds = new Set(alreadyAddedTokens.map(({ id }) => id));
-
-  const nonAddedTokens = useMemo(
-    () => tokens.filter(({ id }) => !alreadyAddedTokensIds.has(id)),
-    alreadyAddedTokensIds,
+  const closeableTokenAccs = (parentAccount.subAccounts ?? []).filter(
+    (acc): acc is TokenAccount =>
+      acc.type === "TokenAccount" && tokenAccCloseableState(acc, parentAccount).closeable,
   );
+
+  const closeableTokens = closeableTokenAccs.map(({ token }) => token);
 
   return (
     <Box flow={1}>
       <TrackPage category="OptIn Flow" name="Step 1" />
       {warning && !error ? <ErrorBanner error={warning} warning /> : null}
       {error ? <ErrorBanner error={error} /> : null}
-      <SplTokenSelector tokens={nonAddedTokens} onTokenSelected={onTokenSelected} />
+      <SplTokenSelector
+        tokens={closeableTokens}
+        selectedToken={account.token}
+        onTokenSelected={onTokenSelected}
+      />
       <Alert type="primary">
         <Trans i18nKey="solana.optIn.flow.steps.tokens.info" />
       </Alert>

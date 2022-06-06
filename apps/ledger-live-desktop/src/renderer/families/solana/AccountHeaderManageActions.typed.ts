@@ -6,6 +6,7 @@ import { useDispatch } from "react-redux";
 import { openModal } from "~/renderer/actions/modals";
 import IconCoins from "~/renderer/icons/Coins";
 import { sweetch } from "@ledgerhq/live-common/lib/families/solana/utils";
+import { OptOutFlowModalData } from "./OptOutFlowModal";
 
 type Props = {
   account: AccountLike;
@@ -74,12 +75,12 @@ function tokenAccActions(
   dispatch: ReturnType<typeof useDispatch>,
   t: TFunction,
 ): Action[] {
-  const launchOptOutFlow = () =>
-    dispatch(
-      openModal("MODAL_SOLANA_OPT_OUT", {
-        account,
-      }),
-    );
+  const data: OptOutFlowModalData = {
+    account,
+    parentAccount,
+  };
+
+  const launchOptOutFlow = () => dispatch(openModal("MODAL_SOLANA_OPT_OUT", data));
 
   const closeableState = tokenAccCloseableState(account, parentAccount);
 

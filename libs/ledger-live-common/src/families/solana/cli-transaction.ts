@@ -123,14 +123,13 @@ function inferTransactions(
         if (account.type !== "TokenAccount") {
           throw new Error("expected token account");
         }
-        const subAccountId = account.id;
 
         const solanaTx: SolanaTransaction = {
           ...transaction,
           model: {
             kind: "token.closeATA",
             uiState: {
-              subAccountId,
+              tokenId: account.token.id,
             },
           },
         };
