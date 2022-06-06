@@ -51,10 +51,10 @@ export default function StepTokens({
 
   const alreadyAddedTokensIds = new Set(alreadyAddedTokens.map(({ id }) => id));
 
-  const nonAddedTokens = useMemo(
-    () => tokens.filter(({ id }) => !alreadyAddedTokensIds.has(id)),
+  const nonAddedTokens = useMemo(() => tokens.filter(({ id }) => !alreadyAddedTokensIds.has(id)), [
+    tokens,
     alreadyAddedTokensIds,
-  );
+  ]);
 
   return (
     <Box flow={1}>

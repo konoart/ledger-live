@@ -3,7 +3,10 @@ import { addPendingOperation } from "@ledgerhq/live-common/lib/account";
 import { getAccountBridge } from "@ledgerhq/live-common/lib/bridge";
 import useBridgeTransaction from "@ledgerhq/live-common/lib/bridge/useBridgeTransaction";
 import { SolanaTokenRequired } from "@ledgerhq/live-common/lib/errors";
-import { Transaction } from "@ledgerhq/live-common/lib/families/solana/types";
+import {
+  TokenCloseATATransaction,
+  Transaction,
+} from "@ledgerhq/live-common/lib/families/solana/types";
 import { Account, Operation, TokenAccount } from "@ledgerhq/live-common/lib/types";
 import React, { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -23,27 +26,27 @@ type BodyProps = {
   onChangeStepId: (step: StepId) => void;
   modalName: string;
   params: {
-    account: TokenAccount;
-    parentAccount: Account;
+    tokenAccount: TokenAccount;
+    account: Account;
   };
 };
 
 const steps: Array<Step> = [
   {
     id: "tokens",
-    label: <Trans i18nKey="solana.optIn.flow.steps.tokens.title" />,
+    label: <Trans i18nKey="solana.optOut.flow.steps.tokens.title" />,
     component: StepTokens,
     noScroll: true,
     footer: StepTokensFooter,
   },
   {
     id: "connectDevice",
-    label: <Trans i18nKey="solana.optIn.flow.steps.connectDevice.title" />,
+    label: <Trans i18nKey="solana.common.connectDevice.title" />,
     component: GenericStepConnectDevice,
   },
   {
     id: "confirmation",
-    label: <Trans i18nKey="solana.optIn.flow.steps.confirmation.title" />,
+    label: <Trans i18nKey="solana.common.confirmation.title" />,
     component: StepConfirmation,
     footer: StepConfirmationFooter,
   },
@@ -56,7 +59,7 @@ export default function Body({ stepId, onChangeStepId, params, modalName }: Body
   const dispatch = useDispatch();
   const { t } = useTranslation();
 
-  const { account: tokenAccount, parentAccount: account } = params;
+  const { tokenAccount, account: account } = params;
 
   const {
     transaction,
@@ -66,14 +69,16 @@ export default function Body({ stepId, onChangeStepId, params, modalName }: Body
     bridgePending,
   } = useBridgeTransaction(() => {
     const bridge = getAccountBridge(account);
-    const transaction: Transaction = bridge.updateTransaction(bridge.createTransaction(account), {
-      model: {
-        kind: "token.createATA",
-        uiState: {
-          tokenId: "",
-        },
+    const model: TokenCloseATATransaction = {
+      kind: "token.closeATA",
+      uiState: {
+        tokenId: "",
       },
+    };
+    const transaction: Transaction = bridge.updateTransaction(bridge.createTransaction(account), {
+      model,
     });
+
     return { transaction };
   });
 
@@ -112,10 +117,10 @@ export default function Body({ stepId, onChangeStepId, params, modalName }: Body
   const errorSteps = transactionError ? [2] : bridgeError ? [0] : [];
 
   const stepperProps: StepperProps = {
-    title: t("solana.optIn.flow.title"),
-    account: tokenAccount,
+    title: t("solana.optOut.flow.title"),
+    account,
     transaction,
-    parentAccount: account,
+    tokenAccount,
     signed,
     stepId,
     steps,
@@ -141,7 +146,7 @@ export default function Body({ stepId, onChangeStepId, params, modalName }: Body
 
   return (
     <Stepper {...stepperProps}>
-      <Track onUnmount event="CloseModalOptIn" />
+      <Track onUnmount event="CloseModalOptOut" />
     </Stepper>
   );
 }

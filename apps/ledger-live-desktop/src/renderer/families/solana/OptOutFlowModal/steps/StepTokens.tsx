@@ -15,7 +15,7 @@ import { StepperProps } from "../types";
 
 export default function StepTokens({
   account,
-  parentAccount,
+  tokenAccount,
   onUpdateTransaction,
   transaction,
   warning,
@@ -24,7 +24,7 @@ export default function StepTokens({
   const { model } = transaction;
 
   if (model.kind !== "token.closeATA") {
-    throw new Error("expected <token.createATA> tx, but got " + model.kind);
+    throw new Error("expected <token.closeATA> tx, but got " + model.kind);
   }
 
   const bridge = getAccountBridge(account);
@@ -41,26 +41,23 @@ export default function StepTokens({
     });
   };
 
-  const closeableTokenAccs = (parentAccount.subAccounts ?? []).filter(
-    (acc): acc is TokenAccount =>
-      acc.type === "TokenAccount" && tokenAccCloseableState(acc, parentAccount).closeable,
+  const closeableTokenAccs = (account.subAccounts ?? []).filter(
+    (subAcc): subAcc is TokenAccount =>
+      subAcc.type === "TokenAccount" && tokenAccCloseableState(subAcc, account).closeable,
   );
 
   const closeableTokens = closeableTokenAccs.map(({ token }) => token);
 
   return (
     <Box flow={1}>
-      <TrackPage category="OptIn Flow" name="Step 1" />
+      <TrackPage category="OptOut Flow" name="Step 1" />
       {warning && !error ? <ErrorBanner error={warning} warning /> : null}
       {error ? <ErrorBanner error={error} /> : null}
       <SplTokenSelector
         tokens={closeableTokens}
-        selectedToken={account.token}
+        selectedToken={tokenAccount.token}
         onTokenSelected={onTokenSelected}
       />
-      <Alert type="primary">
-        <Trans i18nKey="solana.optIn.flow.steps.tokens.info" />
-      </Alert>
     </Box>
   );
 }

@@ -34,8 +34,8 @@ export type StepperProps = {
   signed?: boolean;
   hideCloseButton?: boolean;
   transitionTo: (step: string) => void;
-  account: TokenAccount;
-  parentAccount: Account;
+  account: Account;
+  tokenAccount: TokenAccount;
   transaction: Transaction;
   status: TransactionStatus;
   onTransactionError: (error: Error) => void;

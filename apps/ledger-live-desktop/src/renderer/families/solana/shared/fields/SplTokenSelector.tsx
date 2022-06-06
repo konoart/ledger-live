@@ -17,10 +17,17 @@ type TokenSelectorProps = {
 
 export default function SplTokenSelector({
   tokens,
-  selectedToken,
+  selectedToken: initialySelectedToken,
   onTokenSelected,
 }: TokenSelectorProps) {
   const [query, setQuery] = useState("");
+  const [selectedToken, setSelectedToken] = useState(initialySelectedToken);
+
+  const onTokenChange = (token: TokenCurrency) => {
+    setSelectedToken(token);
+    onTokenSelected(token);
+  };
+
   const { t } = useTranslation();
 
   return (
@@ -37,7 +44,7 @@ export default function SplTokenSelector({
         noOptionsMessage={({ inputValue }: { inputValue: string }) =>
           t("common.selectNoResults", { query: inputValue })
         }
-        onChange={onTokenSelected}
+        onChange={onTokenChange}
       />
     </Box>
   );

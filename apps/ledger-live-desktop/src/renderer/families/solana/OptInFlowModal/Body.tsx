@@ -37,12 +37,12 @@ const steps: Array<Step> = [
   },
   {
     id: "connectDevice",
-    label: <Trans i18nKey="solana.optIn.flow.steps.connectDevice.title" />,
+    label: <Trans i18nKey="solana.common.connectDevice.title" />,
     component: GenericStepConnectDevice,
   },
   {
     id: "confirmation",
-    label: <Trans i18nKey="solana.optIn.flow.steps.confirmation.title" />,
+    label: <Trans i18nKey="solana.common.confirmation.title" />,
     component: StepConfirmation,
     footer: StepConfirmationFooter,
   },

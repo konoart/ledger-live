@@ -70,19 +70,19 @@ function mainAccActions(
 }
 
 function tokenAccActions(
-  account: TokenAccount,
-  parentAccount: Account,
+  tokenAccount: TokenAccount,
+  account: Account,
   dispatch: ReturnType<typeof useDispatch>,
   t: TFunction,
 ): Action[] {
   const data: OptOutFlowModalData = {
+    tokenAccount,
     account,
-    parentAccount,
   };
 
   const launchOptOutFlow = () => dispatch(openModal("MODAL_SOLANA_OPT_OUT", data));
 
-  const closeableState = tokenAccCloseableState(account, parentAccount);
+  const closeableState = tokenAccCloseableState(tokenAccount, account);
 
   return [
     {

@@ -50,19 +50,19 @@ function StepConfirmation({
   if (optimisticOperation) {
     return (
       <Container>
-        <TrackPage category="Solna SPL Token Opt In Flow" name="Step Confirmed" />
+        <TrackPage category="Solna SPL Token Opt Out Flow" name="Step Confirmed" />
         <SyncOneAccountOnMount priority={10} accountId={optimisticOperation.accountId} />
         <SuccessDisplay
           title={
             <Trans
-              i18nKey={`solana.optIn.flow.steps.confirmation.success.title`}
+              i18nKey={`solana.optOut.flow.steps.confirmation.success.title`}
               values={{ token: token?.name }}
             />
           }
           description={
             <div>
               <Trans
-                i18nKey={`solana.optIn.flow.steps.confirmation.success.text`}
+                i18nKey={`solana.optOpt.flow.steps.confirmation.success.text`}
                 values={{ token: token?.name }}
               />
             </div>
@@ -75,7 +75,7 @@ function StepConfirmation({
   if (error) {
     return (
       <Container shouldSpace={signed}>
-        <TrackPage category="Solana SPL Token Opt In Flow" name="Step Confirmation Error" />
+        <TrackPage category="Solana SPL Token Opt Out Flow" name="Step Confirmation Error" />
         {signed ? (
           <BroadcastErrorDisclaimer title={<Trans i18nKey="solana.common.broadcastError" />} />
         ) : null}
@@ -109,7 +109,7 @@ export function StepConfirmationFooter({
         <Button
           primary
           ml={2}
-          event="Solana SPL Token Opt In Flow OpD Clicked"
+          event="Solana SPL Token Opt Out Flow OpD Clicked"
           onClick={() => {
             onClose();
             if (account && concernedOperation) {

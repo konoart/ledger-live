@@ -13,8 +13,8 @@ type OptOutFlowModalProps = {
 };
 
 export type OptOutFlowModalData = {
-  account: TokenAccount;
-  parentAccount: Account;
+  tokenAccount: TokenAccount;
+  account: Account;
 };
 
 export default function OptOutFlowModal({ name: modalName }: OptOutFlowModalProps) {
