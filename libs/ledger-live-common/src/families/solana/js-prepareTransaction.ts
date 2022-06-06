@@ -300,7 +300,7 @@ async function deriveCreateAssociatedTokenAccountCommandDescriptor(
   const warnings: Record<string, Error> = {};
   const { tokenId } = model.uiState;
 
-  const params = {
+  const cmdParams = {
     mint: "",
     associatedTokenAccountAddress: "",
   };
@@ -319,11 +319,11 @@ async function deriveCreateAssociatedTokenAccountCommandDescriptor(
       ) {
         errors.token = new SolanaTokenIsAlreadyAdded();
       } else {
-        params.mint = toTokenMint(token.id);
-        params.associatedTokenAccountAddress =
+        cmdParams.mint = toTokenMint(token.id);
+        cmdParams.associatedTokenAccountAddress =
           await api.findAssocTokenAccAddress(
             mainAccount.freshAddress,
-            params.mint
+            cmdParams.mint
           );
       }
     }
@@ -342,9 +342,9 @@ async function deriveCreateAssociatedTokenAccountCommandDescriptor(
     fee,
     command: {
       kind: model.kind,
-      mint: params.mint,
+      mint: cmdParams.mint,
       owner: mainAccount.freshAddress,
-      associatedTokenAccountAddress: params.associatedTokenAccountAddress,
+      associatedTokenAccountAddress: cmdParams.associatedTokenAccountAddress,
     },
     warnings,
     errors,
@@ -359,28 +359,34 @@ async function deriveCloseAssociatedTokenAccountCommandDescriptor(
   const errors: Record<string, Error> = {};
   const warnings: Record<string, Error> = {};
 
+  const cmdParams = {
+    associatedTokenAccountAddress: "",
+  };
+
   const { tokenId } = model.uiState;
 
-  const subAccount = (mainAccount.subAccounts ?? []).find(
-    (acc) => acc.type === "TokenAccount" && acc.token.id === tokenId
-  );
+  if (tokenId === "") {
+    errors.token = new SolanaTokenRequired();
+  } else {
+    const subAccount = (mainAccount.subAccounts ?? []).find(
+      (acc) => acc.type === "TokenAccount" && acc.token.id === tokenId
+    );
 
-  if (!subAccount || subAccount.type !== "TokenAccount") {
-    throw new Error("subaccount not found");
+    if (!subAccount || subAccount.type !== "TokenAccount") {
+      throw new Error("subaccount not found");
+    }
+    const closeableState = tokenAccCloseableState(subAccount, mainAccount);
+
+    if (closeableState.closeable) {
+      cmdParams.associatedTokenAccountAddress =
+        decodeAccountIdWithTokenAccountAddress(subAccount.id).address;
+    } else {
+      errors.token = sweetch(closeableState.reason, {
+        frozen: new SolanaTokenAccountIsFrozen(),
+        nonZeroBalance: new SolanaTokenAccountHasNonZeroBalance(),
+      });
+    }
   }
-
-  const closeableState = tokenAccCloseableState(subAccount, mainAccount);
-
-  if (!closeableState.closeable) {
-    errors.tokenAcc = sweetch(closeableState.reason, {
-      frozen: new SolanaTokenAccountIsFrozen(),
-      nonZeroBalance: new SolanaTokenAccountHasNonZeroBalance(),
-    });
-  }
-
-  const associatedTokenAccountAddress = decodeAccountIdWithTokenAccountAddress(
-    subAccount.id
-  ).address;
 
   const fee = await estimateTxFee(api, mainAccount, "token.closeATA");
 
@@ -394,7 +400,7 @@ async function deriveCloseAssociatedTokenAccountCommandDescriptor(
       kind: model.kind,
       destinationAddress: mainAccount.freshAddress,
       owner: mainAccount.freshAddress,
-      associatedTokenAccountAddress,
+      associatedTokenAccountAddress: cmdParams.associatedTokenAccountAddress,
     },
     warnings,
     errors,

@@ -72,14 +72,14 @@ export default function Body({ stepId, onChangeStepId, params, modalName }: Body
     const model: TokenCloseATATransaction = {
       kind: "token.closeATA",
       uiState: {
-        tokenId: "",
+        tokenId: tokenAccount.token.id,
       },
     };
     const transaction: Transaction = bridge.updateTransaction(bridge.createTransaction(account), {
       model,
     });
 
-    return { transaction };
+    return { account, transaction };
   });
 
   if (transaction?.family !== "solana") {

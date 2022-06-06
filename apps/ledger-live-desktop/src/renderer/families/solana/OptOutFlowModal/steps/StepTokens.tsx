@@ -5,7 +5,6 @@ import { TokenAccount, TokenCurrency } from "@ledgerhq/live-common/lib/types";
 import React from "react";
 import { Trans } from "react-i18next";
 import TrackPage from "~/renderer/analytics/TrackPage";
-import Alert from "~/renderer/components/Alert";
 import Box from "~/renderer/components/Box";
 import Button from "~/renderer/components/Button";
 import ErrorBanner from "~/renderer/components/ErrorBanner";
@@ -27,9 +26,9 @@ export default function StepTokens({
     throw new Error("expected <token.closeATA> tx, but got " + model.kind);
   }
 
-  const bridge = getAccountBridge(account);
-
   const onTokenSelected = ({ id: tokenId }: TokenCurrency) => {
+    const bridge = getAccountBridge(account);
+
     onUpdateTransaction(transaction => {
       const model: TokenCloseATATransaction = {
         kind: "token.closeATA",
@@ -70,7 +69,7 @@ export function StepTokensFooter({
   bridgePending,
 }: StepperProps) {
   const { errors } = status;
-  const hasErrors = Object.keys(errors).length;
+  const hasErrors = Object.keys(errors).length > 0;
   const canNext = !bridgePending && !hasErrors;
 
   return (

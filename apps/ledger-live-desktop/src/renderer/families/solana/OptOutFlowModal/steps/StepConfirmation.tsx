@@ -36,8 +36,8 @@ function StepConfirmation({
   }
   const { model } = transaction;
 
-  if (model.kind !== "token.createATA") {
-    throw new Error("expected <token.createATA> transaction");
+  if (model.kind !== "token.closeATA") {
+    throw new Error("expected <token.closeATA> transaction");
   }
 
   const options = listTokensForCryptoCurrency(account.currency);

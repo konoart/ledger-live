@@ -77,7 +77,7 @@ export function StepTokensFooter({
   bridgePending,
 }: StepperProps) {
   const { errors } = status;
-  const hasErrors = Object.keys(errors).length;
+  const hasErrors = Object.keys(errors).length > 0;
   const canNext = !bridgePending && !hasErrors;
 
   return (
