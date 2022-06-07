@@ -62,7 +62,7 @@ function StepConfirmation({
           description={
             <div>
               <Trans
-                i18nKey={`solana.optOpt.flow.steps.confirmation.success.text`}
+                i18nKey={`solana.optOut.flow.steps.confirmation.success.text`}
                 values={{ token: token?.name }}
               />
             </div>

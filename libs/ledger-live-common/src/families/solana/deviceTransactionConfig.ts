@@ -166,7 +166,18 @@ function fieldsForCreateATA(
 function fieldsForCloseATA(
   command: TokenCloseATACommand
 ): DeviceTransactionField[] {
-  const fields: Array<DeviceTransactionField> = [];
+  const fields: Array<DeviceTransactionField> = [
+    {
+      type: "address",
+      label: "Close acct",
+      address: command.associatedTokenAccountAddress,
+    },
+    {
+      type: "address",
+      label: "Withdraw to",
+      address: command.destinationAddress,
+    },
+  ];
   return fields;
 }
 

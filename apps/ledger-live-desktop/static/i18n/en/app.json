@@ -2706,12 +2706,12 @@
         "steps": {
           "tokens": {
             "title": "Chose Token"
-          }
-        },
-        "confirmation": {
-          "success": {
-            "title": "You have successfully removed the token.",
-            "text": "The token will disappear when the blockchain confirms the transaction."
+          },
+          "confirmation": {
+            "success": {
+              "title": "You have successfully removed the token.",
+              "text": "The token will disappear when the blockchain confirms the transaction."
+            }
           }
         }
       }
