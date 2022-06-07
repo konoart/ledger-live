@@ -169,8 +169,7 @@ const deriveTokenTransferCommandDescriptor = async (
     validateMemoCommon(memo, errors);
   }
 
-  const tokenIdParts = subAccount.token.id.split("/");
-  const mintAddress = tokenIdParts[tokenIdParts.length - 1];
+  const mintAddress = toTokenMint(subAccount.token.id);
   const mintDecimals = subAccount.token.units[0].magnitude;
 
   const senderAssociatedTokenAccountAddress =

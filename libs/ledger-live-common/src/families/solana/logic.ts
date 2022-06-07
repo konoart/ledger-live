@@ -163,8 +163,6 @@ export function tokenAccCloseableState(
     };
   }
 
-  // TODO: check if any native acc can be closed with balance > 0
-
   if (mint !== NATIVE_MINT.toBase58() && !tokenAccount.balance.isZero()) {
     return {
       closeable: false,

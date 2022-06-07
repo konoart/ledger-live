@@ -16,11 +16,9 @@ import {
   SolanaAddressOffEd25519,
   SolanaInvalidValidator,
   SolanaMemoIsTooLong,
-  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
   SolanaRecipientAssociatedTokenAccountWillBeFunded,
   SolanaStakeAccountNotFound,
   SolanaStakeAccountRequired,
-  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
   SolanaTokenAccountHoldsAnotherToken,
   SolanaValidatorRequired,
 } from "./errors";
@@ -68,7 +66,6 @@ const mainAccId = encodeAccountId({
   derivationMode: "solanaMain",
 });
 
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 const wSolSubAccId = encodeAccountIdWithTokenAccountAddress(
   mainAccId,
   testOnChainData.wSolSenderAssocTokenAccAddress
@@ -119,7 +116,7 @@ const solana: CurrenciesData<Transaction> = {
         },
         ...transferTests(),
         ...stakingTests(),
-        //...tokenTests()
+        ...tokenTests(),
       ],
     },
   ],
@@ -422,8 +419,6 @@ function transferTests(): TransactionTestSpec[] {
   ];
 }
 
-// uncomment when tokens are supported
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 function tokenTests(): TransactionTestSpec[] {
   return [
     {

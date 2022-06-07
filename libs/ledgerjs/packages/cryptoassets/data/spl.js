@@ -84,5 +84,5 @@ module.exports = [
 [103,"My Ledger Token 22eQ","My Ledger Token 22eQ","22eQxHmZnmmtKGT9Yk5BZqCwsDZvWfnQPhYJZxneznnH",6],
 [103,"My Ledger Token 62Qg","My Ledger Token 62Qg","62QgTX49s911LyUehuEVrX8KWpwUtgKVA5i13meqZaiY",6],
 [103,"My Ledger Token 6g2j","My Ledger Token 6g2j","6g2jSQHj2HquwnQChSXZ5dEdbwGKGDU9JtzpmXXVCwr6",6],
-[103,"My Ledger Token G6nE","My Ledger Token G6nE","G6nE3kXycaWnWVsDy3H1DjBJ3hHA4cWDLfJphR4cpPzY",6],
+[103,"My Ledger Token G6nE","My Ledger Token G6nE","G6nE3kXycaWnWVsDy3H1DjBJ3hHA4cWDLfJphR4cpPzY",9],
 ];
