@@ -192,13 +192,14 @@ function optimisticOpForTokenTransfer(
     id: encodeOperationId(account.id, "", "FEES"),
     type: "FEES",
     accountId: account.id,
-    senders: [account.freshAddress],
-    recipients: [transaction.recipient],
-    value: new BigNumber(command.amount),
+    senders: [],
+    recipients: [],
+    value: new BigNumber(commandDescriptor.fee),
     extra: getOpExtras(command),
     subOperations: [
       {
         ...optimisticOpcommons(commandDescriptor),
+        fee: new BigNumber(0),
         id: encodeOperationId(transaction.subAccountId, "", "OUT"),
         type: "OUT",
         accountId: transaction.subAccountId,
