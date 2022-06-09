@@ -483,7 +483,7 @@ function tokenTests(): TransactionTestSpec[] {
         warnings: {},
         estimatedFees: fees(1),
         amount: testOnChainData.wSolSenderAssocTokenAccBalance.dividedBy(2),
-        totalSpent: zero,
+        totalSpent: testOnChainData.wSolSenderAssocTokenAccBalance.dividedBy(2),
       },
     },
     {
@@ -506,7 +506,7 @@ function tokenTests(): TransactionTestSpec[] {
         warnings: {},
         estimatedFees: fees(1),
         amount: testOnChainData.wSolSenderAssocTokenAccBalance.dividedBy(2),
-        totalSpent: zero,
+        totalSpent: testOnChainData.wSolSenderAssocTokenAccBalance.dividedBy(2),
       },
     },
     {
@@ -525,9 +525,12 @@ function tokenTests(): TransactionTestSpec[] {
       expectedStatus: {
         errors: {},
         warnings: {
+          recipient: new SolanaRecipientAssociatedTokenAccountWillBeFunded(),
+          /*
           recipient: new SolanaAccountNotFunded(),
           recipientAssociatedTokenAccount:
             new SolanaRecipientAssociatedTokenAccountWillBeFunded(),
+          */
         },
         // this fee is dynamic, skip
         //estimatedFees: new BigNumber(2044280),
