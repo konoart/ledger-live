@@ -116,18 +116,6 @@ function fieldsForTokenTransfer(
     label: "From",
   });
 
-  fields.push({
-    type: "address",
-    address: command.ownerAddress,
-    label: "Owner",
-  });
-
-  fields.push({
-    type: "address",
-    address: command.ownerAddress,
-    label: "Fee payer",
-  });
-
   return fields;
 }
 

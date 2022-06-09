@@ -333,8 +333,13 @@ function patchedSubAcc({
 
   const totalOps = mergeOps(subAcc.operations, newOps);
 
+  const pendingOperations: Operation[] = subAcc.pendingOperations.filter(
+    (pendingOp) => newOps.every((newOp) => newOp.id !== pendingOp.id)
+  );
+
   return {
     ...subAcc,
+    pendingOperations,
     balance,
     spendableBalance: balance,
     operations: totalOps,

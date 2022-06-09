@@ -191,7 +191,7 @@ export const buildTokenTransferInstructions = (
       createAssociatedTokenAccountInstruction(
         ownerPubkey,
         destinationPubkey,
-        ownerPubkey,
+        new PublicKey(recipientDescriptor.walletAddress),
         mintPubkey
       )
     );
