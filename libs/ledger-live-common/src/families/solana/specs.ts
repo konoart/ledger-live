@@ -1,21 +1,33 @@
-import invariant from "invariant";
-import expect from "expect";
 import { getCryptoCurrencyById } from "@ledgerhq/cryptoassets";
 import { DeviceModelId } from "@ledgerhq/devices";
+import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import BigNumber from "bignumber.js";
+import expect from "expect";
+import invariant from "invariant";
+import { sample } from "lodash/fp";
 import { pickSiblings } from "../../bot/specs";
 import { AppSpec, TransactionTestInput } from "../../bot/types";
-import { Transaction } from "./types";
+import { Account, TokenAccount } from "../../types/account";
+import { getCurrentSolanaPreloadData } from "./js-preload-data";
+import { toTokenMint } from "./logic";
 import {
   acceptStakeCreateAccountTransaction,
   acceptStakeDelegateTransaction,
   acceptStakeUndelegateTransaction,
   acceptStakeWithdrawTransaction,
+  acceptTokenTransferTransaction,
   acceptTransferTransaction,
 } from "./speculos-deviceActions";
-import { assertUnreachable } from "./utils";
-import { getCurrentSolanaPreloadData } from "./js-preload-data";
-import { sample } from "lodash/fp";
-import BigNumber from "bignumber.js";
+import { Transaction } from "./types";
+import {
+  assertUnreachable,
+  getAssociatedTokenAddressSync,
+  sweetch,
+} from "./utils";
+
+// those values can change in future
+const txFee = 5000;
+const assocTokenAccRentExempt = 2039280;
 
 const solana: AppSpec<Transaction> = {
   name: "Solana",
@@ -465,6 +477,91 @@ const solana: AppSpec<Transaction> = {
         expect(delegationExists).toBe(false);
       },
     },
+    {
+      name: "Token Transfer (should not fund recipient token account)",
+      maxRun: 1,
+      deviceAction: acceptTokenTransferTransaction,
+      transaction: ({ account, bridge, siblings }) => {
+        const useAllAmount = Math.random() > 0.5;
+        const recipientAddrKind =
+          Math.random() > 0.5 ? "wallet" : "assocTokenAcc";
+
+        invariant(
+          account.spendableBalance.gte(txFee),
+          `not enough balance, required: ${txFee / LAMPORTS_PER_SOL} SOL`
+        );
+
+        const sendableSubAccs = getSendableSubAccs(account);
+
+        if (sendableSubAccs.length === 0) {
+          throw new Error("account has no tokens to transfer");
+        }
+
+        const sendablesReceivables = sendableSubAccs
+          .map(
+            (subAcc) =>
+              [subAcc, tokenReceivableAccs(siblings, subAcc.token.id)] as const
+          )
+          .filter(([, receivableAccs]) => receivableAccs.length > 0);
+
+        const senderReceivables = sample(sendablesReceivables);
+
+        if (senderReceivables === undefined) {
+          throw new Error(
+            `provided siblings can not accept any of the sendable tokens: ${sendableSubAccs
+              .map((a) => a.token.ticker)
+              .join(", ")}`
+          );
+        }
+
+        const [sender, receivables] = senderReceivables;
+
+        const recipient: Account | undefined | null = pickSiblings(receivables);
+
+        if (!recipient) {
+          throw new Error("no sibling picked");
+        }
+
+        const mint = toTokenMint(sender.token.id);
+
+        const recipientAddr = sweetch(recipientAddrKind, {
+          wallet: () => recipient.freshAddress,
+          assocTokenAcc: () =>
+            getAssociatedTokenAddressSync(
+              new PublicKey(mint),
+              new PublicKey(recipient.freshAddress)
+            ).toBase58(),
+        });
+
+        const transaction: Transaction = bridge.createTransaction(account);
+
+        const senderHalfBalance = sender.spendableBalance.div(2).integerValue();
+        const amount = useAllAmount
+          ? new BigNumber(0)
+          : senderHalfBalance.gt(0)
+          ? senderHalfBalance
+          : sender.spendableBalance;
+
+        return {
+          transaction,
+          updates: [
+            {
+              recipient: recipientAddr(),
+              useAllAmount,
+              amount,
+            },
+            {
+              model: {
+                kind: "token.transfer",
+                uiState: {
+                  subAccountId: sender.id,
+                },
+              },
+            },
+          ],
+        };
+      },
+    },
   ],
 };
 
@@ -505,6 +602,21 @@ function expectCorrectBalanceChange(input: TransactionTestInput<Transaction>) {
   const { account, operation, accountBeforeTransaction } = input;
   expect(account.balance.toNumber()).toBe(
     accountBeforeTransaction.balance.minus(operation.value).toNumber()
+  );
+}
+
+function getSendableSubAccs(account: Account) {
+  return (account.subAccounts ?? []).filter(
+    (acc): acc is TokenAccount =>
+      acc.type === "TokenAccount" && acc.spendableBalance.gt(0)
+  );
+}
+
+function tokenReceivableAccs(accounts: Account[], tokenId: string) {
+  return accounts.filter((acc) =>
+    (acc.subAccounts ?? []).some(
+      (subAcc) => subAcc.type === "TokenAccount" && subAcc.token.id === tokenId
+    )
   );
 }
 

@@ -1,4 +1,9 @@
-import { Cluster, clusterApiUrl } from "@solana/web3.js";
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  TokenOwnerOffCurveError,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
+import { Cluster, clusterApiUrl, PublicKey } from "@solana/web3.js";
 import { partition } from "lodash/fp";
 import { getEnv } from "../../env";
 import { ValidatorsAppValidator } from "./validator-app";
@@ -169,4 +174,23 @@ export function sweetch<T extends keyof any, R>(
   cases: Record<T, R>
 ): R {
   return cases[caze];
+}
+
+// remove when this function is available in @solana/spl-token package
+export function getAssociatedTokenAddressSync(
+  mint: PublicKey,
+  owner: PublicKey,
+  allowOwnerOffCurve = false,
+  programId = TOKEN_PROGRAM_ID,
+  associatedTokenProgramId = ASSOCIATED_TOKEN_PROGRAM_ID
+): PublicKey {
+  if (!allowOwnerOffCurve && !PublicKey.isOnCurve(owner.toBuffer()))
+    throw new TokenOwnerOffCurveError();
+
+  const [address] = PublicKey.findProgramAddressSync(
+    [owner.toBuffer(), programId.toBuffer(), mint.toBuffer()],
+    associatedTokenProgramId
+  );
+
+  return address;
 }

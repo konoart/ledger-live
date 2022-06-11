@@ -226,6 +226,21 @@ export const acceptStakeWithdrawTransaction: DeviceAction<Transaction, any> =
     ],
   });
 
+export const acceptTokenTransferTransaction: DeviceAction<Transaction, any> =
+  deviceActionFlow({
+    steps: [],
+  });
+
+export const acceptTokenCreateATATransaction: DeviceAction<Transaction, any> =
+  deviceActionFlow({
+    steps: [],
+  });
+
+export const acceptTokenCloseATATransaction: DeviceAction<Transaction, any> =
+  deviceActionFlow({
+    steps: [],
+  });
+
 function throwUnexpectedTransaction(): never {
   throw new Error("unexpected or unprepared transaction");
 }
